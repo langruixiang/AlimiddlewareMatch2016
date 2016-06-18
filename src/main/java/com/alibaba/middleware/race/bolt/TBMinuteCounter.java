@@ -71,7 +71,7 @@ public class TBMinuteCounter implements IBasicBolt {
 					collector.emit(RaceTopology.TBWIRELESSSTREAM, new Values(entry.getKey(), entry.getValue()));
 					LOG.info("TBMinuteCounter Emit TBWirelessCounter" + entry.getKey() + " : " + entry.getValue());
 					flg = true;
-				}else if(entry.getKey() - 0 > 1e-6){
+				}else if(entry.getValue() - 0 > 1e-6){
 					collector.emit(RaceTopology.TBWIRELESSSTREAM, new Values(entry.getKey(), entry.getValue()));
 					LOG.info("TBMinuteCounter Emit TBWirelessCounter" + entry.getKey() + " : " + entry.getValue());
 				}
