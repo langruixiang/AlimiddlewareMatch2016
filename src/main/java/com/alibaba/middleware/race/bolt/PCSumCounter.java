@@ -6,6 +6,7 @@ import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.jstorm.RaceTopology;
 import com.alibaba.middleware.race.rocketmq.CounterFactory;
 
@@ -23,6 +24,7 @@ public class PCSumCounter implements IBasicBolt {
 	private static Logger LOG = LoggerFactory.getLogger(PCSumCounter.class);
 	
 	private TreeMap<Long, Double> sum;
+	private long lastTime = 0;
 	
 	@Override
 	public void execute(Tuple tuple, BasicOutputCollector collector) {
@@ -33,13 +35,18 @@ public class PCSumCounter implements IBasicBolt {
 			Double value = tuple.getDouble(1);
 			
 			sum.put(key, sum.get(key) + value);
+		}
+		
+		if(System.currentTimeMillis() - lastTime >= RaceConfig.BoltInterval){				
+			for(Map.Entry<Long, Double> entry : sum.entrySet()){
+				if(entry.getValue() - 0 > 1e-6){
+					collector.emit(new Values(entry.getKey(), entry.getValue()));
+					LOG.info("PCSumCounter" + entry.getKey() + " : " + entry.getValue());
+				}
+			}
+			CounterFactory.cleanCounter(sum);				
 			
-
-			
-//			if(System.currentTimeMillis() / 1000 % RaceConfig.BoltInterval == 0){
-				collector.emit(new Values(key, value));
-				LOG.info("PCSumCounter Emit:" + key + ":" + value);
-//			}
+			lastTime = System.currentTimeMillis();
 		}
 	}
 

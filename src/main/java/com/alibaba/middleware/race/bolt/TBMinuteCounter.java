@@ -1,10 +1,7 @@
 package com.alibaba.middleware.race.bolt;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,60 +22,70 @@ public class TBMinuteCounter implements IBasicBolt {
 	private static final long serialVersionUID = -2174576268166494831L;
 
 	private static Logger LOG = LoggerFactory.getLogger(TBMinuteCounter.class);
+	private long lastTime = 0;
 	
-	private Set<Long> TBOrderID;
 	private Map<Long, Double> PCCounter;
 	private Map<Long, Double> WirelessCounter;
+	
+	private int counter = 0;
 
 	@Override
 	public void execute(Tuple tuple, BasicOutputCollector collector) {
 		// TODO Auto-generated method stub
-				Log.info("TBMinute Counter Receive:" + tuple.toString());
-				if(tuple.getSourceComponent().equals(RaceTopology.TBTRADESPOUT)){
-					TBOrderID.add(tuple.getLong(0));
-				}else if(tuple.getSourceComponent().equals(RaceTopology.PAYSPOUT)){
-					long orderID = tuple.getLong(0);
-					long createTime = tuple.getLong(1);
-					double payAmount = tuple.getDouble(2);
-					short payPlatform = tuple.getShort(3);
+		LOG.info("TBMinute Counter Receive" + ++counter + tuple.toString());
+		
+		if(tuple.getSourceStreamId().equals(RaceTopology.TBPAYSTREAM)){
+			long createTime = tuple.getLong(1);
+			double payAmount = tuple.getDouble(2);
+			short payPlatform = tuple.getShort(3);
+			
+
+			long timeStamp = (createTime / 1000 / 60) * 60;
+			if(payPlatform == RaceConfig.PC){
+				PCCounter.put(timeStamp, PCCounter.get(timeStamp) + payAmount);
+			}else{
+				WirelessCounter.put(timeStamp, WirelessCounter.get(timeStamp) + payAmount);
+			}
+		}
+		
+		if(System.currentTimeMillis() - lastTime >= RaceConfig.BoltInterval){
+			boolean flg = false;
+			
+			for(Entry<Long, Double> entry : PCCounter.entrySet()){
+				if(flg == false){
+					collector.emit(RaceTopology.TBPCCOUNTERSTREAM, new Values(entry.getKey(), entry.getValue()));
+					LOG.info("TBMinuteCounter Emit TBPCCounter" + entry.getKey() + " : " + entry.getValue());
 					
-					if(TBOrderID.contains(orderID)){
-						long timeStamp = (createTime / 1000 / 60) * 60;
-						if(payPlatform == RaceConfig.PC){
-							PCCounter.put(timeStamp, PCCounter.get(timeStamp) + payAmount);
-						}else{
-							WirelessCounter.put(timeStamp, WirelessCounter.get(timeStamp) + payAmount);
-						}
-						
-						if(System.currentTimeMillis() / 1000 % RaceConfig.BoltInterval == 1){
-							
-							for(Entry<Long, Double> entry : PCCounter.entrySet()){
-								if(entry.getValue() - 0 > 1e-6){
-									collector.emit(RaceTopology.TBPCCOUNTERSTREAM, new Values(entry.getKey(), entry.getValue()));
-									LOG.info("TBMinuteCounter Emit TBPCCounter" + entry.getKey() + " : " + entry.getValue());
-								}
-							}							
-							CounterFactory.cleanCounter(PCCounter);
-							
-							
-							
-							for(Map.Entry<Long, Double> entry : WirelessCounter.entrySet()){
-								if(entry.getKey() - 0 > 1e-6){
-									collector.emit(RaceTopology.TBWIRELESSSTREAM, new Values(entry.getKey() + ":" + entry.getValue()));
-									LOG.info("TBMinuteCounter Emit TBWirelessCounter" + entry.getKey() + " : " + entry.getValue());
-								}
-							}
-							CounterFactory.cleanCounter(WirelessCounter);
-						}
-					}
+					flg = true;
+				}else if(entry.getValue() - 0 > 1e-6){
+					collector.emit(RaceTopology.TBPCCOUNTERSTREAM, new Values(entry.getKey(), entry.getValue()));
+					LOG.info("TBMinuteCounter Emit TBPCCounter" + entry.getKey() + " : " + entry.getValue());
 				}
+			}							
+			CounterFactory.cleanCounter(PCCounter);
+			
+			
+			flg = false;
+			for(Map.Entry<Long, Double> entry : WirelessCounter.entrySet()){
+				if(flg == false){
+					collector.emit(RaceTopology.TBWIRELESSSTREAM, new Values(entry.getKey(), entry.getValue()));
+					LOG.info("TBMinuteCounter Emit TBWirelessCounter" + entry.getKey() + " : " + entry.getValue());
+					flg = true;
+				}else if(entry.getKey() - 0 > 1e-6){
+					collector.emit(RaceTopology.TBWIRELESSSTREAM, new Values(entry.getKey(), entry.getValue()));
+					LOG.info("TBMinuteCounter Emit TBWirelessCounter" + entry.getKey() + " : " + entry.getValue());
+				}
+			}
+			CounterFactory.cleanCounter(WirelessCounter);
+			
+			lastTime = System.currentTimeMillis();
+		}
 		
 	}
 
 	@Override
 	public void prepare(Map arg0, TopologyContext arg1) {
 		// TODO Auto-generated method stub
-		TBOrderID = new HashSet<Long>();
 		PCCounter = CounterFactory.createHashCounter();
 		WirelessCounter = CounterFactory.createHashCounter();
 	}

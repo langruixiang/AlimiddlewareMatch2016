@@ -14,6 +14,7 @@ import com.alibaba.middleware.race.bolt.TBCounterWriter;
 import com.alibaba.middleware.race.bolt.TBMinuteCounter;
 import com.alibaba.middleware.race.bolt.TMMinuteCounter;
 import com.alibaba.middleware.race.bolt.WirelessSumCounter;
+import com.alibaba.middleware.race.spout.AllSpout;
 import com.alibaba.middleware.race.spout.PaySpout;
 import com.alibaba.middleware.race.spout.TBTradeSpout;
 import com.alibaba.middleware.race.spout.TMTradeSpout;
@@ -36,14 +37,19 @@ import org.slf4j.LoggerFactory;
 public class RaceTopology {
     private static Logger LOG = LoggerFactory.getLogger(RaceTopology.class);
     /** Spout **/
-    private static final int TMTradeSpoutParallelism = 1;
-    public static final String TMTRADESPOUT = "TMTradeSpout";
+    private static final int AllSpoutParallelism = 1;
+    public static final String ALLSPOUT = "AllSpout";
+    public static final String TMPAYSTREAM = "TMPayStream";
+    public static final String TBPAYSTREAM = "TBPayStream";
     
-    private static final int TBTreadeSpoutParallelism = 1;
-    public static final String TBTRADESPOUT = "TBTradeSpout";
-    
-    private static final int PaySpoutParallelism = 1;
-    public static final String PAYSPOUT = "PaySpout";
+//    private static final int TMTradeSpoutParallelism = 1;
+//    public static final String TMTRADESPOUT = "TMTradeSpout";
+//    
+//    private static final int TBTreadeSpoutParallelism = 1;
+//    public static final String TBTRADESPOUT = "TBTradeSpout";
+//    
+//    private static final int PaySpoutParallelism = 1;
+//    public static final String PAYSPOUT = "PaySpout";
     
     /** Counter Bolt **/
     private static final int TMMinuteCounterParallelism = 2;
@@ -79,17 +85,17 @@ public class RaceTopology {
         TopologyBuilder builder = new TopologyBuilder();
 
         /** Spout **/
-        builder.setSpout(TMTRADESPOUT, new TMTradeSpout(), TMTradeSpoutParallelism);
-        builder.setSpout(TBTRADESPOUT, new TBTradeSpout(), TBTreadeSpoutParallelism);
-        builder.setSpout(PAYSPOUT, new PaySpout(), PaySpoutParallelism);
+//        builder.setSpout(TMTRADESPOUT, new TMTradeSpout(), TMTradeSpoutParallelism);
+//        builder.setSpout(TBTRADESPOUT, new TBTradeSpout(), TBTreadeSpoutParallelism);
+//        builder.setSpout(PAYSPOUT, new PaySpout(), PaySpoutParallelism);
+        
+        builder.setSpout(ALLSPOUT, new AllSpout(), AllSpoutParallelism);
         
         /** Counter Bolt **/
         builder.setBolt(TMMINUTECOUNTERBOLT, new TMMinuteCounter(), TMMinuteCounterParallelism)
-        	   .fieldsGrouping(TMTRADESPOUT, new Fields("orderID"))
-        	   .fieldsGrouping(PAYSPOUT, new Fields("orderID"));
+        	   .shuffleGrouping(ALLSPOUT, TMPAYSTREAM);
         builder.setBolt(TBMINUTECOUNTERBOLT, new TBMinuteCounter(), TBMinuteCounterParallelism)
-        	   .fieldsGrouping(TBTRADESPOUT, new Fields("orderID"))
-        	   .fieldsGrouping(PAYSPOUT, new Fields("orderID"));
+        	   .shuffleGrouping(ALLSPOUT, TBPAYSTREAM);
         
         builder.setBolt(PCSUMCOUNTERRBOLT, new PCSumCounter(), PCSumCounterParallelism)
         	   .globalGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM)
@@ -106,8 +112,9 @@ public class RaceTopology {
  	           .globalGrouping(TBMINUTECOUNTERBOLT, TBWIRELESSSTREAM);
         
         builder.setBolt(RATIONWRITERBOLT, new RatioWriter(), RationCounterParallelism)
-        	   .globalGrouping(PCSUMCOUNTERRBOLT)
-        	   .globalGrouping(WIRELESSSUMCOUNTERBOLT);
+	           .globalGrouping(PCSUMCOUNTERRBOLT)
+	           .globalGrouping(WIRELESSSUMCOUNTERBOLT);
+
         
         String topologyName = RaceConfig.JstormTopologyName;
 

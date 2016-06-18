@@ -24,5 +24,5 @@ public class RaceConfig implements Serializable {
     public static short PC = 0;
     public static short Wireless = 1;
     
-    public static int BoltInterval = 2;
+    public static long BoltInterval = 2000L;
 }

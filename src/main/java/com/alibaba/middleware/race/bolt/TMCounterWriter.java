@@ -50,7 +50,7 @@ public class TMCounterWriter implements IBasicBolt{
 		sum.put(key, sum.get(key) + value);
 		
 		tairOperator.write(RaceConfig.prex_tmall + key, sum.get(key));
-		LOG.info("TMCounterWriter: " + RaceConfig.prex_tmall +  key + " " + sum.get(key));
+//		LOG.info("TMCounterWriter: " + RaceConfig.prex_tmall +  key + " " + sum.get(key));
 	}
 
 	@Override

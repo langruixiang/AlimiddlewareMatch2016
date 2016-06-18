@@ -14,6 +14,7 @@ import com.alibaba.middleware.race.RaceUtils;
 import java.util.List;
 
 public class Consumer {
+	private static int counter = 0;
 
     public static void main(String[] args) throws InterruptedException, MQClientException {
         DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("xxx");
@@ -38,7 +39,8 @@ public class Consumer {
                     }
 
                     PaymentMessage paymentMessage = RaceUtils.readKryoObject(PaymentMessage.class, body);
-                    System.out.println(paymentMessage);
+                    counter++;
+                    System.out.println("" + counter + paymentMessage);
                 }
                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
             }

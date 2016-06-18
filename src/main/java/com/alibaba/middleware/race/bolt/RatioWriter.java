@@ -1,6 +1,5 @@
 package com.alibaba.middleware.race.bolt;
 
-import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -59,7 +58,7 @@ public class RatioWriter implements IBasicBolt{
 					PCSumCounter.put(entryKey, PCSumCounter.get(entryKey) + value);
 					
 					tairOperator.write(RaceConfig.prex_ratio + entryKey, WirelessSumCounter.get(entryKey) / PCSumCounter.get(entryKey));
-					LOG.info("Ratio Writer:" + entryKey + ":" + WirelessSumCounter.get(entryKey) / PCSumCounter.get(entryKey));
+//					LOG.info("Ratio Writer:" + entryKey + ":" + WirelessSumCounter.get(entryKey) / PCSumCounter.get(entryKey));
 				}
 			}			
 			
@@ -71,7 +70,7 @@ public class RatioWriter implements IBasicBolt{
 					WirelessSumCounter.put(entryKey, WirelessSumCounter.get(entryKey) + value);
 					
 					tairOperator.write(RaceConfig.prex_ratio + entryKey, WirelessSumCounter.get(entryKey) / PCSumCounter.get(entryKey));
-					LOG.info("Ratio Writer:" + entryKey + ":" + WirelessSumCounter.get(entryKey) / PCSumCounter.get(entryKey));
+//					LOG.info("Ratio Writer:" + entryKey + ":" + WirelessSumCounter.get(entryKey) / PCSumCounter.get(entryKey));
 				}
 			}
 		}			

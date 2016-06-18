@@ -27,6 +27,8 @@ public class Producer {
     
     private static TreeMap<Long, Double> PCCounter = CounterFactory.createTreeCounter();
     private static TreeMap<Long, Double> WirelessCounter = CounterFactory.createTreeCounter();
+    
+    private static int paymentCounter = 0;
 
     public static void main(String[] args) throws MQClientException, InterruptedException {
         DefaultMQProducer producer = new DefaultMQProducer("producer");
@@ -68,6 +70,8 @@ public class Producer {
                     }
 
                     if (retVal > 0) {
+                    	paymentCounter++;
+                    	
                         amount += paymentMessage.getPayAmount();
                         final Message messageToBroker = new Message(RaceConfig.MqPayTopic, RaceUtils.writeKryoObject(paymentMessage));
                         producer.send(messageToBroker, new SendCallback() {
@@ -78,12 +82,18 @@ public class Producer {
                                 throwable.printStackTrace();
                             }
                         });
-                        if(paymentMessage.getPayPlatform() == RaceConfig.PC){
-                        	Long key = paymentMessage.getCreateTime() / 1000 / 60 * 60;
+                        
+                        Long key = paymentMessage.getCreateTime() / 1000 / 60 * 60;;
+                        if(paymentMessage.getPayPlatform() == RaceConfig.PC){                        	
                         	PCCounter.put(key, PCCounter.get(key) + paymentMessage.getPayAmount());
                         }else{
-                        	Long key = paymentMessage.getCreateTime() / 1000 / 60 * 60;
                         	WirelessCounter.put(key, WirelessCounter.get(key) + paymentMessage.getPayAmount());
+                        }
+                        
+                        if(orderMessage.getSalerId().startsWith("tb")){
+                        	tbCounter.put(key, tbCounter.get(key) + paymentMessage.getPayAmount());
+                        }else{
+                        	tmCounter.put(key, tmCounter.get(key) + paymentMessage.getPayAmount());
                         }
                         
                     }else {
@@ -117,12 +127,27 @@ public class Producer {
             e.printStackTrace();
         }
         
+        Double pcSum = 0.0;
+        Double wirelessSum = 0.0;
+        
         for(Map.Entry<Long, Double> entry : PCCounter.entrySet()){
         	Long key = entry.getKey();
-        	if(PCCounter.get(key) != 0 && WirelessCounter.get(key) != 0){
-        		System.out.println(WirelessCounter.get(key) / PCCounter.get(key));
+        	if(tbCounter.get(key) - 0.0 > 1e-6){
+        		System.out.println(RaceConfig.prex_taobao + key + ":" + tbCounter.get(key));
+        	}
+        	
+        	if(tmCounter.get(key) - 0.0 > 1e-6){
+        		System.out.println(RaceConfig.prex_tmall + key + ":" + tmCounter.get(key));
+        	}
+        	pcSum += PCCounter.get(key);
+        	wirelessSum += WirelessCounter.get(key);
+        	
+        	if(pcSum != 0 &&  wirelessSum != 0){
+        		System.out.println(RaceConfig.prex_ratio + key + ":" + wirelessSum / pcSum);
         	}
         }
+        
+        System.out.println("paymentCounter:" + paymentCounter);
         producer.shutdown();
     }
 }

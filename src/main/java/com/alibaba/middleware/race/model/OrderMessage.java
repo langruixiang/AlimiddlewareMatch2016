@@ -3,22 +3,21 @@ package com.alibaba.middleware.race.model;
 import java.io.Serializable;
 
 /**
- * 我们后台RocketMq存储的订单消息模型类似于OrderMessage，选手也可以自定义
- * 订单消息模型，只要模型中各个字段的类型和顺序和OrderMessage一样，即可用Kryo
- * 反序列出消息
+ * 锟斤拷锟角猴拷台RocketMq锟芥储锟侥讹拷锟斤拷锟斤拷息模锟斤拷锟斤拷锟斤拷锟斤拷OrderMessage锟斤拷选锟斤拷也锟斤拷锟斤拷锟皆讹拷锟斤拷
+ * 锟斤拷锟斤拷锟斤拷息模锟酵ｏ拷只要模锟斤拷锟叫革拷锟斤拷锟街段碉拷锟斤拷锟酵猴拷顺锟斤拷锟絆rderMessage一锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷Kryo
+ * 锟斤拷锟斤拷锟叫筹拷锟斤拷息
  */
 public class OrderMessage implements Serializable{
     private static final long serialVersionUID = -4082657304129211564L;
-    private long orderId; //订单ID
-    private String buyerId; //买家ID
-    private String productId; //商品ID
+    private long orderId; 
+    private String buyerId; 
+    private String productId; 
 
-    private String salerId; //卖家ID
-    private long createTime; //13位数数，毫秒级时间戳，订单创建时间
+    private String salerId; 
+    private long createTime; 
     private double totalPrice;
 
 
-    //Kryo默认需要无参数构造函数
     private OrderMessage() {
 
     }

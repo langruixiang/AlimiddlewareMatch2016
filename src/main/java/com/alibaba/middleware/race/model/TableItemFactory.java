@@ -4,12 +4,12 @@ import java.util.Random;
 
 public class TableItemFactory {
 
-    private static final int BUYER_NUMS = 10000; //买家总数目
-    private static final int PRODUCT_NUMS = 2000; //买家总数目
+    private static final int BUYER_NUMS = 10000; 
+    private static final int PRODUCT_NUMS = 2000; 
 
     private static final int MAX_TOTAL_PRICE = 10000 * 10;
 
-    private static long startId = System.currentTimeMillis(); //第一个订单ID
+    private static long startId = System.currentTimeMillis(); 
     private static Random rand = new Random();
 
 

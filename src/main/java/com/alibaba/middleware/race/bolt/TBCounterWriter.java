@@ -51,7 +51,7 @@ public class TBCounterWriter implements IBasicBolt{
 		sum.put(key, sum.get(key) + value);
 		
 		tairOperator.write(RaceConfig.prex_taobao + key, sum.get(key));
-		LOG.info("TBCounterWriter: " + RaceConfig.prex_taobao + key + " " + sum.get(key));
+//		LOG.info("TBCounterWriter: " + RaceConfig.prex_taobao + key + " " + sum.get(key));
 	}
 
 	@Override

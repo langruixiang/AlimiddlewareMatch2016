@@ -6,12 +6,6 @@ import com.esotericsoftware.kryo.io.Output;
 
 
 public class RaceUtils {
-    /**
-     * 由于我们是将消息进行Kryo序列化后，堆积到RocketMq，所有选手需要从metaQ获取消息，
-     * 反序列出消息模型，只要消息模型的定义类似于OrderMessage和PaymentMessage即可
-     * @param object
-     * @return
-     */
     public static byte[] writeKryoObject(Object object) {
         Output output = new Output(1024);
         Kryo kryo = new Kryo();
