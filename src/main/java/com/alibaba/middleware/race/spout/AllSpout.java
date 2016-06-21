@@ -28,12 +28,11 @@ import backtype.storm.topology.IRichSpout;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
-import io.netty.handler.codec.compression.SnappyFramedEncoder;
 
 public class AllSpout implements IRichSpout{
 	private static final long serialVersionUID = 282914905327080472L;
 
-	private static Logger LOG = LoggerFactory.getLogger(PaySpout.class);
+	private static Logger LOG = LoggerFactory.getLogger(AllSpout.class);
 	
 	private SpoutOutputCollector _collector;
 	
@@ -47,12 +46,14 @@ public class AllSpout implements IRichSpout{
 	
 	private transient DefaultMQPushConsumer TMTradeConsumer;
 	private transient ConcurrentHashMap<Long, Double> TMTradeMessage;
+	private transient FixedsizeLinkedHashMap completeTMTrade;
 	
 	private transient DefaultMQPushConsumer TBConsumer;
 	private transient ConcurrentHashMap<Long, Double> TBTradeMessage;
+	private transient FixedsizeLinkedHashMap completeTBTrade;
 	
 	private void initPayConsumer() throws MQClientException{
-		payConsumer = new DefaultMQPushConsumer("PayConsumer");
+		payConsumer = new DefaultMQPushConsumer(RaceConfig.MetaConsumerGroup + "pay");
 		this.payMessageQueue = new LinkedBlockingQueue<PaymentMessage>();
 		this.unSolvedMessage = new LinkedBlockingQueue<PaymentMessage>();
 		
@@ -93,8 +94,11 @@ public class AllSpout implements IRichSpout{
     }
 	
 	private void initTMTradeConsumer() throws MQClientException{
-		 	TMTradeConsumer = new DefaultMQPushConsumer("TBTradeConsumer");
-		 	TMTradeMessage = new ConcurrentHashMap<Long, Double>();
+		 	TMTradeConsumer = new DefaultMQPushConsumer(RaceConfig.MetaConsumerGroup+ "TMTrade");
+		 	TMTradeMessage = new ConcurrentHashMap<Long, Double>(RaceConfig.MapInitCapacity);
+		 	TMTradeMessage.put(RaceConfig.specialTMOrderID, 0.1);
+		 	
+		 	completeTMTrade = new FixedsizeLinkedHashMap(RaceConfig.MapInitCapacity);
 	    	
 	    	TMTradeConsumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
 	   	    
@@ -129,8 +133,10 @@ public class AllSpout implements IRichSpout{
 	}
 	
 	private void initTBTradeConsumer() throws MQClientException{
-		 TBConsumer = new DefaultMQPushConsumer("TMTradeConsumer");
-		 TBTradeMessage = new ConcurrentHashMap<Long, Double>();
+		 TBConsumer = new DefaultMQPushConsumer(RaceConfig.MetaConsumerGroup+ "TBTrade");
+		 TBTradeMessage = new ConcurrentHashMap<Long, Double>(RaceConfig.MapInitCapacity);
+		 TBTradeMessage.put(RaceConfig.specialTBOrderID, 0.1);
+		 completeTBTrade = new FixedsizeLinkedHashMap(RaceConfig.MapInitCapacity);
 	   	 
 	   	 TBConsumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
 	   	 TBConsumer.setNamesrvAddr(RaceConfig.MQNameServerAddr);
@@ -159,42 +165,77 @@ public class AllSpout implements IRichSpout{
    }
 	
 	private void sendEmptyPayMessage(){
-		if(TMTradeMessage.size() > 0){
-			long TMOrderID = TMTradeMessage.keySet().iterator().next();			
-			
-			PaymentMessage paymentMessage = new PaymentMessage(TMOrderID, 0.0, (short)0, RaceConfig.PC, CounterFactory.timeStamp[3] * 1000);
-			solvePayMentmessage(paymentMessage);
-			
-			paymentMessage = new PaymentMessage(TMOrderID, 0.0, (short)0, RaceConfig.Wireless, CounterFactory.timeStamp[3] * 1000);
-			solvePayMentmessage(paymentMessage);
-		}
+		long TMOrderID = RaceConfig.specialTMOrderID;		
+		PaymentMessage paymentMessage = new PaymentMessage(TMOrderID, 0.0, (short)0, RaceConfig.PC, CounterFactory.timeStamp[3] * 1000);
+		solvePayMentmessage(paymentMessage);
 		
-		if(TBTradeMessage.size() > 0){
-			long TBOrderID = TBTradeMessage.keySet().iterator().next();
-			PaymentMessage paymentMessage = new PaymentMessage(TBOrderID, 0.0, (short)0, RaceConfig.PC, CounterFactory.timeStamp[3] * 1000);
-			solvePayMentmessage(paymentMessage);
-			
-			paymentMessage = new PaymentMessage(TBOrderID, 0.0, (short)0, RaceConfig.Wireless, CounterFactory.timeStamp[3] * 1000);
-			solvePayMentmessage(paymentMessage);
-		}
+		paymentMessage = new PaymentMessage(TMOrderID, 0.0, (short)0, RaceConfig.Wireless, CounterFactory.timeStamp[3] * 1000);
+		solvePayMentmessage(paymentMessage);
+		
+		long TBOrderID = RaceConfig.specialTBOrderID;
+		paymentMessage = new PaymentMessage(TBOrderID, 0.0, (short)0, RaceConfig.PC, CounterFactory.timeStamp[3] * 1000);
+		solvePayMentmessage(paymentMessage);
+		
+		paymentMessage = new PaymentMessage(TBOrderID, 0.0, (short)0, RaceConfig.Wireless, CounterFactory.timeStamp[3] * 1000);
+		solvePayMentmessage(paymentMessage);
 	}
 
 	private void solvePayMentmessage(PaymentMessage paymentMessage){
 		paymentCounter++;
 		
-		if(TMTradeMessage.containsKey(paymentMessage.getOrderId())){
+		Long orderID = paymentMessage.getOrderId();
+		
+		if(TMTradeMessage.containsKey(orderID)){
 			Values values = new Values(paymentMessage.getOrderId(), paymentMessage.getCreateTime(), paymentMessage.getPayAmount(),
 					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
 			_collector.emit(RaceTopology.TMPAYSTREAM, values, paymentMessage);
 			
 			lastTime = System.currentTimeMillis();
+			
+			Double lastAmount = TMTradeMessage.get(orderID);
+			if(lastAmount - paymentMessage.getPayAmount() < 1e-6){
+				TMTradeMessage.remove(orderID);
+				completeTMTrade.put(orderID, 0.0);
+			}else{
+				TMTradeMessage.put(orderID, lastAmount - paymentMessage.getPayAmount());
+			}
+			
 			LOG.info("AllSpout Emit TMPayment" + paymentCounter + ":" + paymentMessage.toString());
-		}else if(TBTradeMessage.containsKey(paymentMessage.getOrderId())){
+		}else if(TBTradeMessage.containsKey(orderID)){
 			Values values = new Values(paymentMessage.getOrderId(), paymentMessage.getCreateTime(), paymentMessage.getPayAmount(),
 					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
 			_collector.emit(RaceTopology.TBPAYSTREAM, values, paymentMessage);
 			
-			lastTime = System.currentTimeMillis();
+			lastTime = System.currentTimeMillis();			
+			Double lastAmount = TBTradeMessage.get(orderID);
+			if(lastAmount - paymentMessage.getPayAmount() < 1e-6){
+				TBTradeMessage.remove(orderID);
+				completeTBTrade.put(orderID, 0.0);
+			}else{
+				TBTradeMessage.put(orderID, lastAmount - paymentMessage.getPayAmount());
+			}
+			LOG.info("AllSpout Emit TBPayment" + paymentCounter + ":" + paymentMessage.toString());
+		}else{
+			unSolvedMessage.add(paymentMessage);
+		}
+	}
+	
+	private void solveFailPaymentMessage(PaymentMessage paymentMessage){
+		Long orderID = paymentMessage.getOrderId();
+		
+		if(TMTradeMessage.containsKey(orderID) || completeTMTrade.containsKey(orderID)){
+			Values values = new Values(paymentMessage.getOrderId(), paymentMessage.getCreateTime(), paymentMessage.getPayAmount(),
+					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
+			_collector.emit(RaceTopology.TMPAYSTREAM, values, paymentMessage);
+			
+			lastTime = System.currentTimeMillis();			
+			LOG.info("AllSpout Emit TMPayment" + paymentCounter + ":" + paymentMessage.toString());
+		}else if(TBTradeMessage.containsKey(orderID) || completeTBTrade.containsKey(orderID)){
+			Values values = new Values(paymentMessage.getOrderId(), paymentMessage.getCreateTime(), paymentMessage.getPayAmount(),
+					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
+			_collector.emit(RaceTopology.TBPAYSTREAM, values, paymentMessage);
+			
+			lastTime = System.currentTimeMillis();			
 			LOG.info("AllSpout Emit TBPayment" + paymentCounter + ":" + paymentMessage.toString());
 		}else{
 			unSolvedMessage.add(paymentMessage);
@@ -228,7 +269,7 @@ public class AllSpout implements IRichSpout{
 	@Override
 	public void fail(Object paymentMessage) {
 		// TODO Auto-generated method stub
-		solvePayMentmessage((PaymentMessage)paymentMessage);
+		solveFailPaymentMessage((PaymentMessage)paymentMessage);
 	}
 
 	@Override
@@ -270,9 +311,9 @@ public class AllSpout implements IRichSpout{
 		_collector = collector;
 		
 		try {
-			this.initPayConsumer();
-			this.initTBTradeConsumer();
-			this.initTMTradeConsumer();
+			initPayConsumer();
+			initTBTradeConsumer();
+			initTMTradeConsumer();
 		} catch (MQClientException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -20,7 +20,7 @@ import java.util.concurrent.Semaphore;
 public class Producer {
 
     private static Random rand = new Random();
-    private static int count = 1000;
+    private static int count = 8000;
     
     private static TreeMap<Long, Double> tmCounter = CounterFactory.createTreeCounter();
     private static TreeMap<Long, Double> tbCounter = CounterFactory.createTreeCounter();
@@ -31,9 +31,10 @@ public class Producer {
     private static int paymentCounter = 0;
 
     public static void main(String[] args) throws MQClientException, InterruptedException {
-        DefaultMQProducer producer = new DefaultMQProducer("producer");
+        DefaultMQProducer producer = new DefaultMQProducer(RaceConfig.MetaConsumerGroup);
 
-        producer.setNamesrvAddr(RaceConfig.MQNameServerAddr);
+//        producer.setNamesrvAddr(RaceConfig.MQNameServerAddr);
+        producer.setSendMsgTimeout(5000);
 
         producer.start();
 
@@ -83,7 +84,7 @@ public class Producer {
                             }
                         });
                         
-                        Long key = paymentMessage.getCreateTime() / 1000 / 60 * 60;;
+                        Long key = paymentMessage.getCreateTime() / 1000 / 60 * 60;
                         if(paymentMessage.getPayPlatform() == RaceConfig.PC){                        	
                         	PCCounter.put(key, PCCounter.get(key) + paymentMessage.getPayAmount());
                         }else{
@@ -105,11 +106,14 @@ public class Producer {
                     throw new RuntimeException("totalprice is not equal.");
                 }
 
+                
 
             } catch (Exception e) {
                 e.printStackTrace();
                 Thread.sleep(2000);
             }
+            
+            Thread.sleep(50);
         }
 
         semaphore.acquire(count);
