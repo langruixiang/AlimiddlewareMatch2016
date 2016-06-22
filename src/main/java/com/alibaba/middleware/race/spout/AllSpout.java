@@ -40,25 +40,22 @@ public class AllSpout implements IRichSpout{
 	
 	private long lastTime = 0;
 	
-	private transient DefaultMQPushConsumer payConsumer;
 	private transient LinkedBlockingQueue<PaymentMessage> payMessageQueue;
 	private transient LinkedBlockingQueue<PaymentMessage> unSolvedMessage;
 	
-	private transient DefaultMQPushConsumer TMTradeConsumer;
 	private transient ConcurrentHashMap<Long, Double> TMTradeMessage;
 	private transient FixedsizeLinkedHashMap completeTMTrade;
 	
-	private transient DefaultMQPushConsumer TBConsumer;
 	private transient ConcurrentHashMap<Long, Double> TBTradeMessage;
 	private transient FixedsizeLinkedHashMap completeTBTrade;
 	
 	private void initPayConsumer() throws MQClientException{
-		payConsumer = new DefaultMQPushConsumer(RaceConfig.MetaConsumerGroup + "pay");
+		DefaultMQPushConsumer payConsumer = new DefaultMQPushConsumer(RaceConfig.MetaConsumerGroup + "pay");
 		this.payMessageQueue = new LinkedBlockingQueue<PaymentMessage>();
 		this.unSolvedMessage = new LinkedBlockingQueue<PaymentMessage>();
 		
 		payConsumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
-		payConsumer.setNamesrvAddr(RaceConfig.MQNameServerAddr);
+//		payConsumer.setNamesrvAddr(RaceConfig.MQNameServerAddr);
         try {
         	payConsumer.subscribe(RaceConfig.MqPayTopic, "*");
 		} catch (MQClientException e1) {
@@ -94,7 +91,7 @@ public class AllSpout implements IRichSpout{
     }
 	
 	private void initTMTradeConsumer() throws MQClientException{
-		 	TMTradeConsumer = new DefaultMQPushConsumer(RaceConfig.MetaConsumerGroup+ "TMTrade");
+			DefaultMQPushConsumer TMTradeConsumer = new DefaultMQPushConsumer(RaceConfig.MetaConsumerGroup+ "TMTrade");
 		 	TMTradeMessage = new ConcurrentHashMap<Long, Double>(RaceConfig.MapInitCapacity);
 		 	TMTradeMessage.put(RaceConfig.specialTMOrderID, 0.1);
 		 	
@@ -102,7 +99,7 @@ public class AllSpout implements IRichSpout{
 	    	
 	    	TMTradeConsumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
 	   	    
-	    	TMTradeConsumer.setNamesrvAddr(RaceConfig.MQNameServerAddr);
+//	    	TMTradeConsumer.setNamesrvAddr(RaceConfig.MQNameServerAddr);
 	        try {
 	        	TMTradeConsumer.subscribe(RaceConfig.MqTmallTradeTopic, "*");
 			} catch (MQClientException e1) {
@@ -133,13 +130,13 @@ public class AllSpout implements IRichSpout{
 	}
 	
 	private void initTBTradeConsumer() throws MQClientException{
-		 TBConsumer = new DefaultMQPushConsumer(RaceConfig.MetaConsumerGroup+ "TBTrade");
+		DefaultMQPushConsumer TBConsumer = new DefaultMQPushConsumer(RaceConfig.MetaConsumerGroup+ "TBTrade");
 		 TBTradeMessage = new ConcurrentHashMap<Long, Double>(RaceConfig.MapInitCapacity);
 		 TBTradeMessage.put(RaceConfig.specialTBOrderID, 0.1);
 		 completeTBTrade = new FixedsizeLinkedHashMap(RaceConfig.MapInitCapacity);
 	   	 
 	   	 TBConsumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
-	   	 TBConsumer.setNamesrvAddr(RaceConfig.MQNameServerAddr);
+//	   	 TBConsumer.setNamesrvAddr(RaceConfig.MQNameServerAddr);
 	   	 TBConsumer.subscribe(RaceConfig.MqTaobaoTradeTopic, "*");
 	   	 TBConsumer.registerMessageListener(new MessageListenerConcurrently() {
 	

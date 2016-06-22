@@ -9,7 +9,7 @@ public class RaceConfig implements Serializable {
     public static String prex_ratio = "ratio_";
 
 
-    public static String MQNameServerAddr = "192.168.1.101:9876"; 
+//    public static String MQNameServerAddr = "192.168.1.101:9876"; 
     
     public static String JstormTopologyName = "race";
     public static String MetaConsumerGroup = "group";
