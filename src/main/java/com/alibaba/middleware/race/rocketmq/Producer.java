@@ -31,7 +31,7 @@ public class Producer {
     private static int paymentCounter = 0;
 
     public static void main(String[] args) throws MQClientException, InterruptedException {
-        DefaultMQProducer producer = new DefaultMQProducer(RaceConfig.MetaConsumerGroup);
+        DefaultMQProducer producer = new DefaultMQProducer(RaceConfig.MetaConsumerGroup + "producer");
 
 //        producer.setNamesrvAddr(RaceConfig.MQNameServerAddr);
         producer.setSendMsgTimeout(5000);

@@ -28,6 +28,7 @@ import backtype.storm.topology.IRichSpout;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
+import ch.qos.logback.classic.net.SocketNode;
 
 public class AllSpout implements IRichSpout{
 	private static final long serialVersionUID = 282914905327080472L;
@@ -50,19 +51,28 @@ public class AllSpout implements IRichSpout{
 	private transient FixedsizeLinkedHashMap completeTBTrade;
 	
 	private void initPayConsumer() throws MQClientException{
-		DefaultMQPushConsumer payConsumer = new DefaultMQPushConsumer(RaceConfig.MetaConsumerGroup + "pay");
+		DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(RaceConfig.MetaConsumerGroup);
+		
 		this.payMessageQueue = new LinkedBlockingQueue<PaymentMessage>();
 		this.unSolvedMessage = new LinkedBlockingQueue<PaymentMessage>();
 		
-		payConsumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
+		TMTradeMessage = new ConcurrentHashMap<Long, Double>(RaceConfig.MapInitCapacity);
+	 	TMTradeMessage.put(RaceConfig.specialTMOrderID, 0.1);	 	
+	 	completeTMTrade = new FixedsizeLinkedHashMap(RaceConfig.MapInitCapacity);
+	 	
+	 	TBTradeMessage = new ConcurrentHashMap<Long, Double>(RaceConfig.MapInitCapacity);
+		TBTradeMessage.put(RaceConfig.specialTBOrderID, 0.1);
+		completeTBTrade = new FixedsizeLinkedHashMap(RaceConfig.MapInitCapacity);
+		
+		consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
+		consumer.subscribe(RaceConfig.MqTaobaoTradeTopic, "*");
+		consumer.subscribe(RaceConfig.MqPayTopic, "*");
+		consumer.subscribe(RaceConfig.MqTmallTradeTopic, "*");
+		
+		consumer.setPullBatchSize(RaceConfig.MQBatchSize);
 //		payConsumer.setNamesrvAddr(RaceConfig.MQNameServerAddr);
-        try {
-        	payConsumer.subscribe(RaceConfig.MqPayTopic, "*");
-		} catch (MQClientException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-        payConsumer.registerMessageListener(new MessageListenerConcurrently() {
+        
+        consumer.registerMessageListener(new MessageListenerConcurrently() {
 
             @Override
             public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
@@ -76,8 +86,16 @@ public class AllSpout implements IRichSpout{
 					         continue;
 					     }
 					     
-					     PaymentMessage paymentMessage = RaceUtils.readKryoObject(PaymentMessage.class, body);
-					     payMessageQueue.put(paymentMessage);
+					     if(msg.getTopic().equals(RaceConfig.MqPayTopic)){
+					    	 PaymentMessage paymentMessage = RaceUtils.readKryoObject(PaymentMessage.class, body);
+						     payMessageQueue.put(paymentMessage); 
+					     }else if(msg.getTopic().equals(RaceConfig.MqTaobaoTradeTopic)){
+					    	 OrderMessage orderMessage = RaceUtils.readKryoObject(OrderMessage.class, body);
+						     TBTradeMessage.put(orderMessage.getOrderId(), orderMessage.getTotalPrice());
+					     }else if(msg.getTopic().equals(RaceConfig.MqTmallTradeTopic)){
+					    	 OrderMessage orderMessage = RaceUtils.readKryoObject(OrderMessage.class, body);
+						     TMTradeMessage.put(orderMessage.getOrderId(), orderMessage.getTotalPrice());
+					     }
 					 }
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
@@ -87,79 +105,9 @@ public class AllSpout implements IRichSpout{
             }
         });
 
-        payConsumer.start();
+        consumer.start();
     }
-	
-	private void initTMTradeConsumer() throws MQClientException{
-			DefaultMQPushConsumer TMTradeConsumer = new DefaultMQPushConsumer(RaceConfig.MetaConsumerGroup+ "TMTrade");
-		 	TMTradeMessage = new ConcurrentHashMap<Long, Double>(RaceConfig.MapInitCapacity);
-		 	TMTradeMessage.put(RaceConfig.specialTMOrderID, 0.1);
-		 	
-		 	completeTMTrade = new FixedsizeLinkedHashMap(RaceConfig.MapInitCapacity);
-	    	
-	    	TMTradeConsumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
-	   	    
-//	    	TMTradeConsumer.setNamesrvAddr(RaceConfig.MQNameServerAddr);
-	        try {
-	        	TMTradeConsumer.subscribe(RaceConfig.MqTmallTradeTopic, "*");
-			} catch (MQClientException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-	        TMTradeConsumer.registerMessageListener(new MessageListenerConcurrently() {
 
-	            @Override
-	            public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
-	                                                            ConsumeConcurrentlyContext context) {
-	                for (MessageExt msg : msgs) {
-
-					     byte [] body = msg.getBody();
-					     if (body.length == 2 && body[0] == 0 && body[1] == 0) {
-					         System.out.println("Got the end signal");
-					         continue;
-					     }
-					     
-					     OrderMessage orderMessage = RaceUtils.readKryoObject(OrderMessage.class, body);
-					     TMTradeMessage.put(orderMessage.getOrderId(), orderMessage.getTotalPrice());
-					 }
-	                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-	            }
-	        });
-
-	        TMTradeConsumer.start();
-	}
-	
-	private void initTBTradeConsumer() throws MQClientException{
-		DefaultMQPushConsumer TBConsumer = new DefaultMQPushConsumer(RaceConfig.MetaConsumerGroup+ "TBTrade");
-		 TBTradeMessage = new ConcurrentHashMap<Long, Double>(RaceConfig.MapInitCapacity);
-		 TBTradeMessage.put(RaceConfig.specialTBOrderID, 0.1);
-		 completeTBTrade = new FixedsizeLinkedHashMap(RaceConfig.MapInitCapacity);
-	   	 
-	   	 TBConsumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
-//	   	 TBConsumer.setNamesrvAddr(RaceConfig.MQNameServerAddr);
-	   	 TBConsumer.subscribe(RaceConfig.MqTaobaoTradeTopic, "*");
-	   	 TBConsumer.registerMessageListener(new MessageListenerConcurrently() {
-	
-	            @Override
-	            public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
-	                                                            ConsumeConcurrentlyContext context) {
-					for (MessageExt msg : msgs) {
-	
-					     byte [] body = msg.getBody();
-					     if (body.length == 2 && body[0] == 0 && body[1] == 0) {
-					         System.out.println("Got the end signal");
-					         continue;
-					     }
-					     
-					     OrderMessage orderMessage = RaceUtils.readKryoObject(OrderMessage.class, body);
-					     TBTradeMessage.put(orderMessage.getOrderId(), orderMessage.getTotalPrice());
-					 }
-	                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-	            }
-	        });
-	
-	   	  TBConsumer.start();
-   }
 	
 	private void sendEmptyPayMessage(){
 		long TMOrderID = RaceConfig.specialTMOrderID;		
@@ -309,8 +257,6 @@ public class AllSpout implements IRichSpout{
 		
 		try {
 			initPayConsumer();
-			initTBTradeConsumer();
-			initTMTradeConsumer();
 		} catch (MQClientException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
