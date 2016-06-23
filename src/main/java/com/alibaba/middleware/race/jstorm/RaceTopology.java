@@ -12,6 +12,8 @@ import com.alibaba.middleware.race.bolt.TBMinuteCounter;
 import com.alibaba.middleware.race.bolt.TMMinuteCounter;
 import com.alibaba.middleware.race.bolt.WirelessSumCounter;
 import com.alibaba.middleware.race.spout.AllSpout;
+import com.alibaba.middleware.race.spout.AllSpoutTair;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +70,7 @@ public class RaceTopology {
         TopologyBuilder builder = new TopologyBuilder();
 
         /** Spout **/        
-        builder.setSpout(ALLSPOUT, new AllSpout(), AllSpoutParallelism);
+        builder.setSpout(ALLSPOUT, new AllSpoutTair(), AllSpoutParallelism);
         
         /** Counter Bolt **/
         builder.setBolt(TMMINUTECOUNTERBOLT, new TMMinuteCounter(), TMMinuteCounterParallelism)

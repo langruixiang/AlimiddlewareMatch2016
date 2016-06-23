@@ -29,6 +29,7 @@ public class RaceConfig implements Serializable {
     
     public static long BoltInterval = 2000L;
     public static int MapInitCapacity = 50000;    
+    public static int tradeQueuesize = 10;
     
     public static int MQBatchSize = 1000;
 }
