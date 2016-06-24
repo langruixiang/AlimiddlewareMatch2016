@@ -31,18 +31,18 @@ import org.slf4j.LoggerFactory;
 public class RaceTopology {
     private static Logger LOG = LoggerFactory.getLogger(RaceTopology.class);
     /** Spout **/
-    private static final int AllSpoutParallelism = 1;
+    private static final int AllSpoutParallelism = 2;
     public static final String ALLSPOUT = "AllSpout";
     public static final String TMPAYSTREAM = "TMPayStream";
     public static final String TBPAYSTREAM = "TBPayStream";
     
     /** Counter Bolt **/
-    private static final int TMMinuteCounterParallelism = 2;
+    private static final int TMMinuteCounterParallelism = 3;
     public static final String TMMINUTECOUNTERBOLT = "TMMinuteCounterBolt";    
     public static final String TMPCCOUNTERSTREAM = "TMPCCounterStream";
     public static final String TMWIRELESSSTREAM = "TMWirelessStream"; 
     
-    private static final int TBMinuteCounterParallelism = 2;
+    private static final int TBMinuteCounterParallelism = 3;
     public static final String TBMINUTECOUNTERBOLT = "TBMinuteCounterBolt";
     public static final String TBPCCOUNTERSTREAM = "TBPCCounterStream";
     public static final String TBWIRELESSSTREAM = "TBWirelessStream";
@@ -70,7 +70,7 @@ public class RaceTopology {
         TopologyBuilder builder = new TopologyBuilder();
 
         /** Spout **/        
-        builder.setSpout(ALLSPOUT, new AllSpoutTair(), AllSpoutParallelism);
+        builder.setSpout(ALLSPOUT, new AllSpout(), AllSpoutParallelism);
         
         /** Counter Bolt **/
         builder.setBolt(TMMINUTECOUNTERBOLT, new TMMinuteCounter(), TMMinuteCounterParallelism)
@@ -102,6 +102,7 @@ public class RaceTopology {
 
         Config conf = new Config();
         conf.setNumWorkers(4);
+        conf.setMessageTimeoutSecs(90);
         
         try {
             StormSubmitter.submitTopology(topologyName, conf, builder.createTopology());

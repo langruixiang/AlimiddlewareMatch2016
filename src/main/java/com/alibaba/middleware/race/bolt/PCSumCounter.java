@@ -37,7 +37,7 @@ public class PCSumCounter implements IBasicBolt {
 			sum.put(key, sum.get(key) + value);
 		}
 		
-		if(System.currentTimeMillis() - lastTime >= RaceConfig.BoltInterval){				
+		if(System.currentTimeMillis() - lastTime >= RaceConfig.SumBoltInterval){				
 			for(Map.Entry<Long, Double> entry : sum.entrySet()){
 				if(entry.getValue() - 0 > 1e-6){
 					collector.emit(new Values(entry.getKey(), entry.getValue()));

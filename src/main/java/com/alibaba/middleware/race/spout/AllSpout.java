@@ -28,7 +28,6 @@ import backtype.storm.topology.IRichSpout;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
-import ch.qos.logback.classic.net.SocketNode;
 
 public class AllSpout implements IRichSpout{
 	private static final long serialVersionUID = 282914905327080472L;
@@ -39,7 +38,8 @@ public class AllSpout implements IRichSpout{
 	
 	private int paymentCounter = 0;
 	
-	private long lastTime = 0;
+	private long TMLastTime = 0;
+	private long TBLastTime = 0;
 	
 	private transient LinkedBlockingQueue<PaymentMessage> payMessageQueue;
 	private transient LinkedBlockingQueue<PaymentMessage> unSolvedMessage;
@@ -109,16 +109,18 @@ public class AllSpout implements IRichSpout{
     }
 
 	
-	private void sendEmptyPayMessage(){
+	private void sendEmptyTMPayMessage(){
 		long TMOrderID = RaceConfig.specialTMOrderID;		
 		PaymentMessage paymentMessage = new PaymentMessage(TMOrderID, 0.0, (short)0, RaceConfig.PC, CounterFactory.timeStamp[3] * 1000);
 		solvePayMentmessage(paymentMessage);
 		
 		paymentMessage = new PaymentMessage(TMOrderID, 0.0, (short)0, RaceConfig.Wireless, CounterFactory.timeStamp[3] * 1000);
 		solvePayMentmessage(paymentMessage);
-		
+	}
+	
+	private void sendEmptyTBPayMessage(){
 		long TBOrderID = RaceConfig.specialTBOrderID;
-		paymentMessage = new PaymentMessage(TBOrderID, 0.0, (short)0, RaceConfig.PC, CounterFactory.timeStamp[3] * 1000);
+		PaymentMessage paymentMessage = new PaymentMessage(TBOrderID, 0.0, (short)0, RaceConfig.PC, CounterFactory.timeStamp[3] * 1000);
 		solvePayMentmessage(paymentMessage);
 		
 		paymentMessage = new PaymentMessage(TBOrderID, 0.0, (short)0, RaceConfig.Wireless, CounterFactory.timeStamp[3] * 1000);
@@ -135,7 +137,7 @@ public class AllSpout implements IRichSpout{
 					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
 			_collector.emit(RaceTopology.TMPAYSTREAM, values, paymentMessage);
 			
-			lastTime = System.currentTimeMillis();
+			TMLastTime = System.currentTimeMillis();
 			
 			Double lastAmount = TMTradeMessage.get(orderID);
 			if(lastAmount - paymentMessage.getPayAmount() < 1e-6){
@@ -151,7 +153,7 @@ public class AllSpout implements IRichSpout{
 					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
 			_collector.emit(RaceTopology.TBPAYSTREAM, values, paymentMessage);
 			
-			lastTime = System.currentTimeMillis();			
+			TBLastTime = System.currentTimeMillis();			
 			Double lastAmount = TBTradeMessage.get(orderID);
 			if(lastAmount - paymentMessage.getPayAmount() < 1e-6){
 				TBTradeMessage.remove(orderID);
@@ -173,14 +175,14 @@ public class AllSpout implements IRichSpout{
 					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
 			_collector.emit(RaceTopology.TMPAYSTREAM, values, paymentMessage);
 			
-			lastTime = System.currentTimeMillis();			
+			TMLastTime = System.currentTimeMillis();			
 			LOG.info("AllSpout Emit TMPayment" + paymentCounter + ":" + paymentMessage.toString());
 		}else if(TBTradeMessage.containsKey(orderID) || completeTBTrade.containsKey(orderID)){
 			Values values = new Values(paymentMessage.getOrderId(), paymentMessage.getCreateTime(), paymentMessage.getPayAmount(),
 					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
 			_collector.emit(RaceTopology.TBPAYSTREAM, values, paymentMessage);
 			
-			lastTime = System.currentTimeMillis();			
+			TMLastTime = System.currentTimeMillis();			
 			LOG.info("AllSpout Emit TBPayment" + paymentCounter + ":" + paymentMessage.toString());
 		}else{
 			unSolvedMessage.add(paymentMessage);
@@ -244,8 +246,14 @@ public class AllSpout implements IRichSpout{
 			
 		}
 		
-		if(System.currentTimeMillis() - lastTime > RaceConfig.BoltInterval){
-			sendEmptyPayMessage();
+		Long current = System.currentTimeMillis();
+		
+		if(current - TMLastTime > RaceConfig.MinuteBoltInterval){
+			sendEmptyTMPayMessage();
+		}
+		
+		if(current - TBLastTime > RaceConfig.MinuteBoltInterval){
+			sendEmptyTBPayMessage();
 		}
 		
 	}

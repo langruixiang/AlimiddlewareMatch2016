@@ -62,7 +62,7 @@ public class TMCounterWriter implements IBasicBolt{
 		sum = CounterFactory.createHashCounter();
 		
 		for(Map.Entry<Long, Double> entry : sum.entrySet()){
-			tairOperator.write(RaceConfig.prex_tmall + entry.getKey(), entry.getValue());
+			tairOperator.write(RaceConfig.prex_tmall + entry.getKey(), 0.0);
 		}
 	}
 

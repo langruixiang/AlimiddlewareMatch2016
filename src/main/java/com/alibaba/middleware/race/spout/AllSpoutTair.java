@@ -306,7 +306,7 @@ public class AllSpoutTair implements IRichSpout{
 			
 		}
 		
-		if(System.currentTimeMillis() - lastTime > RaceConfig.BoltInterval){
+		if(System.currentTimeMillis() - lastTime > RaceConfig.MinuteBoltInterval){
 			sendEmptyPayMessage();
 		}
 	}

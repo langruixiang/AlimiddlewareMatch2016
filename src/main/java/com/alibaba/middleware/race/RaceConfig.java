@@ -12,10 +12,12 @@ public class RaceConfig implements Serializable {
 //    public static String MQNameServerAddr = "192.168.1.101:9876"; 
     
     public static String JstormTopologyName = "race";
-    public static String MetaConsumerGroup = "group";
+    
+    public static String MetaConsumerGroup = "group9";
     public static String MqPayTopic = "MiddlewareRaceTestData_Pay";
     public static String MqTmallTradeTopic = "MiddlewareRaceTestData_TMOrder";
     public static String MqTaobaoTradeTopic = "MiddlewareRaceTestData_TBOrder";
+    
     public static String TairConfigServer = "192.168.1.105:5198";
     public static String TairSalveConfigServer = "";
     public static String TairGroup = "group_1";
@@ -27,7 +29,9 @@ public class RaceConfig implements Serializable {
     public static Long specialTBOrderID = -1L;
     public static Long specialTMOrderID = -2L;
     
-    public static long BoltInterval = 2000L;
+    public static long MinuteBoltInterval = 2000L;
+    public static long SumBoltInterval = 4000L;
+    
     public static int MapInitCapacity = 50000;    
     public static int tradeQueuesize = 10;
     

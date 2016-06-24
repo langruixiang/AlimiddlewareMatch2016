@@ -48,7 +48,7 @@ public class TBMinuteCounter implements IBasicBolt {
 			}
 		}
 		
-		if(System.currentTimeMillis() - lastTime >= RaceConfig.BoltInterval){
+		if(System.currentTimeMillis() - lastTime >= RaceConfig.MinuteBoltInterval){
 			boolean flg = false;
 			
 			for(Entry<Long, Double> entry : PCCounter.entrySet()){

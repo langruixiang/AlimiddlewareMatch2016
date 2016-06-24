@@ -9,7 +9,6 @@ import com.alibaba.rocketmq.client.producer.SendResult;
 import com.alibaba.rocketmq.common.message.Message;
 import com.alibaba.middleware.race.model.*;
 import com.alibaba.middleware.race.RaceUtils;
-import com.alibaba.middleware.race.bolt.PCSumCounter;
 
 import java.util.Map;
 import java.util.Random;
@@ -20,7 +19,7 @@ import java.util.concurrent.Semaphore;
 public class Producer {
 
     private static Random rand = new Random();
-    private static int count = 1000;
+    private static int count = 100000;
     
     private static TreeMap<Long, Double> tmCounter = CounterFactory.createTreeCounter();
     private static TreeMap<Long, Double> tbCounter = CounterFactory.createTreeCounter();
@@ -34,7 +33,7 @@ public class Producer {
         DefaultMQProducer producer = new DefaultMQProducer(RaceConfig.MetaConsumerGroup + "producer");
 
 //        producer.setNamesrvAddr(RaceConfig.MQNameServerAddr);
-        producer.setSendMsgTimeout(5000);
+        producer.setSendMsgTimeout(20000);
 
         producer.start();
 
