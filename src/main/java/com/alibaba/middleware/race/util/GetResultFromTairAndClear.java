@@ -9,6 +9,7 @@ import com.alibaba.middleware.race.util.FileUtil;
 public class GetResultFromTairAndClear {
 
     public static void main(String [] args) throws Exception {
+        FileUtil.deleteFileIfExist(Constants.ACTUAL_RESULT_FILE);
         TairOperatorImpl tairOperator = new TairOperatorImpl(RaceConfig.TairConfigServer, RaceConfig.TairSalveConfigServer,
                 RaceConfig.TairGroup, RaceConfig.TairNamespace);
         Long[] timeStamp = CounterFactory.timeStamp;
@@ -37,6 +38,8 @@ public class GetResultFromTairAndClear {
 
     private static void outputResult(String key, Double value) {
 //        System.out.println(key + " : " + value);
-        FileUtil.appendLineToFile(Constants.ACTUAL_RESULT_FILE, key + " : " + value);
+        if (value != null && value.compareTo(0.0) > 0) {
+            FileUtil.appendLineToFile(Constants.ACTUAL_RESULT_FILE, key + " : " + value);
+        }
     }
 }

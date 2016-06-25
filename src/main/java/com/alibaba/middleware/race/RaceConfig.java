@@ -18,7 +18,7 @@ public class RaceConfig implements Serializable {
     public static String MqTmallTradeTopic = "MiddlewareRaceTestData_TMOrder";
     public static String MqTaobaoTradeTopic = "MiddlewareRaceTestData_TBOrder";
     
-    public static String TairConfigServer = "192.168.1.105:5198";
+    public static String TairConfigServer = "10.214.192.66:5198";//192.168.1.105:5198
     public static String TairSalveConfigServer = "";
     public static String TairGroup = "group_1";
     public static Integer TairNamespace = 0;
@@ -36,4 +36,5 @@ public class RaceConfig implements Serializable {
     public static int tradeQueuesize = 10;
     
     public static int MQBatchSize = 1000;
+
 }

@@ -36,6 +36,7 @@ public class DemoDataProducer {
 
     public static void main(String[] args) throws MQClientException,
             InterruptedException {
+        FileUtil.deleteFileIfExist(Constants.EXPECTED_RESULT_FILE);
         DefaultMQProducer producer = new DefaultMQProducer(
                 RaceConfig.MetaConsumerGroup + "producer");
 
@@ -167,12 +168,12 @@ public class DemoDataProducer {
             pcSum += entry.getValue();
             wirelessSum += WirelessCounter.get(key);
             double ratio = 0.0;
-            if (pcSum.compareTo(0.0) == 0) {
-                ratio = -1;
-            } else {
+            if (pcSum.compareTo(0.0) != 0) {
                 ratio = wirelessSum / pcSum;
             }
-            outputExpectedResult(RaceConfig.prex_ratio + entry.getKey(), ratio);
+            if (ratio > 0.0) {
+                outputExpectedResult(RaceConfig.prex_ratio + entry.getKey(), ratio);
+            }
         }
         System.out.println("paymentCounter:" + paymentCounter);
         producer.shutdown();

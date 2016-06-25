@@ -21,6 +21,7 @@ public class ClearRocketMQ {
     public static void main(String[] args) throws MQClientException, InterruptedException {
         ClearRocketMQ testConsumerGroup = new ClearRocketMQ();
         testConsumerGroup.setupMessageConsumer();
+        System.out.println("----------------------");
     }
     
     /**
