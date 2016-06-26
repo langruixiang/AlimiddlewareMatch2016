@@ -281,6 +281,7 @@ public class AllSpout implements IRichSpout{
 		if(current - TBLastTime > RaceConfig.MinuteBoltInterval){
 		    ++DEBUG_sendEmptyTupleCount;
 			sendEmptyTBPayMessage();
+			logDebugInfo();
 		}
 		
 		if (payMessageQueue.isEmpty()

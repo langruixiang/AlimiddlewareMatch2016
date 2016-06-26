@@ -20,7 +20,7 @@ import java.util.concurrent.Semaphore;
 public class DemoDataProducer {
 
     private static Random rand = new Random();
-    private static int count = 1000;
+    private static int count = 100000;
 
     private static TreeMap<Long, Double> tmCounter = CounterFactory
             .createTreeCounter();
@@ -124,7 +124,9 @@ public class DemoDataProducer {
 
             } catch (Exception e) {
                 e.printStackTrace();
-                Thread.sleep(2000);
+                
+                System.exit(1);
+//                Thread.sleep(2000);
             }
         }// for
 
