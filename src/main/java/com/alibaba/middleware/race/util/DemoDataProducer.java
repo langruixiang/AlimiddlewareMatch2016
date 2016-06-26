@@ -83,7 +83,7 @@ public class DemoDataProducer {
                             0);
                     if (retVal < 0) {
                         throw new RuntimeException("price < 0 !!!!!!!!");
-                    } else if (retVal > 0) {
+                    } else {//also send paymentMessage with amount equals 0
                         paymentCounter++;
                         amount += paymentMessage.getPayAmount();
                         final Message messageToBroker = new Message(
@@ -115,9 +115,6 @@ public class DemoDataProducer {
                             tmCounter.put(key, tmCounter.get(key)
                                     + paymentMessage.getPayAmount());
                         }
-
-                    } else {
-                        // paymentMessage with amount equals 0
                     }
                 }// for
 

@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 public class RaceTopology {
     private static Logger LOG = LoggerFactory.getLogger(RaceTopology.class);
     /** Spout **/
-    private static final int AllSpoutParallelism = 2;
+    private static final int AllSpoutParallelism = 1;
     public static final String ALLSPOUT = "AllSpout";
     public static final String TMPAYSTREAM = "TMPayStream";
     public static final String TBPAYSTREAM = "TBPayStream";

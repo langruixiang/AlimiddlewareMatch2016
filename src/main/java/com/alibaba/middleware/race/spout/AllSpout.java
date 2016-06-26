@@ -4,10 +4,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.RaceUtils;
 import com.alibaba.middleware.race.jstorm.RaceTopology;
@@ -40,6 +44,16 @@ public class AllSpout implements IRichSpout{
 	
 	private long TMLastTime = 0;
 	private long TBLastTime = 0;
+
+	AtomicInteger DEBUG_receivedPaymentMsgCount = new AtomicInteger(0);//TODO just for debug
+	long DEBUG_sendTupleNormallyCount = 0;
+	long DEBUG_sendUnsolvedTupleCount = 0;
+	long DEBUG_sendEmptyTupleCount = 0;
+	long DEBUG_failedTupleCount = 0;
+
+	AtomicBoolean _paymentMsgEndSignal = new AtomicBoolean(false);
+	AtomicLong _latestMsgArrivedTime = new AtomicLong(0);
+	private static final long CONSUMER_MAX_WAITING_TIME = 1 * 60 * 1000;//此时间内收不到任何消息，且_paymentMsgEndSignal为true,则认为所有消息接收完成
 	
 	private transient LinkedBlockingQueue<PaymentMessage> payMessageQueue;
 	private transient LinkedBlockingQueue<PaymentMessage> unSolvedMessage;
@@ -78,15 +92,20 @@ public class AllSpout implements IRichSpout{
             public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
                                                             ConsumeConcurrentlyContext context) {
                 try {
+                    _latestMsgArrivedTime.set(System.currentTimeMillis());
 					for (MessageExt msg : msgs) {
 
 					     byte [] body = msg.getBody();
 					     if (body.length == 2 && body[0] == 0 && body[1] == 0) {
+					         if (msg.getTopic().equals(RaceConfig.MqPayTopic)) {
+					             _paymentMsgEndSignal.set(true);
+					         }
 					         System.out.println("Got the end signal");
 					         continue;
 					     }
 					     
 					     if(msg.getTopic().equals(RaceConfig.MqPayTopic)){
+					         DEBUG_receivedPaymentMsgCount.addAndGet(1);
 					    	 PaymentMessage paymentMessage = RaceUtils.readKryoObject(PaymentMessage.class, body);
 						     payMessageQueue.put(paymentMessage); 
 					     }else if(msg.getTopic().equals(RaceConfig.MqTaobaoTradeTopic)){
@@ -182,7 +201,7 @@ public class AllSpout implements IRichSpout{
 					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
 			_collector.emit(RaceTopology.TBPAYSTREAM, values, paymentMessage);
 			
-			TMLastTime = System.currentTimeMillis();			
+			TBLastTime = System.currentTimeMillis();			
 			LOG.info("AllSpout Emit TBPayment" + paymentCounter + ":" + paymentMessage.toString());
 		}else{
 			unSolvedMessage.add(paymentMessage);
@@ -216,6 +235,7 @@ public class AllSpout implements IRichSpout{
 	@Override
 	public void fail(Object paymentMessage) {
 		// TODO Auto-generated method stub
+	    ++DEBUG_failedTupleCount;
 		solveFailPaymentMessage((PaymentMessage)paymentMessage);
 	}
 
@@ -225,9 +245,10 @@ public class AllSpout implements IRichSpout{
 		
 		if(!payMessageQueue.isEmpty()){
 			try {
-				PaymentMessage paymentMessage = payMessageQueue.take();				
-				solvePayMentmessage(paymentMessage);				
-				
+				PaymentMessage paymentMessage = payMessageQueue.take();
+				solvePayMentmessage(paymentMessage);
+				++DEBUG_sendTupleNormallyCount;
+
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -238,7 +259,8 @@ public class AllSpout implements IRichSpout{
 			try {
 				PaymentMessage paymentMessage = unSolvedMessage.take();					
 				solvePayMentmessage(paymentMessage);
-				
+				++DEBUG_sendUnsolvedTupleCount;
+
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -249,11 +271,18 @@ public class AllSpout implements IRichSpout{
 		Long current = System.currentTimeMillis();
 		
 		if(current - TMLastTime > RaceConfig.MinuteBoltInterval){
+		    ++DEBUG_sendEmptyTupleCount;
 			sendEmptyTMPayMessage();
 		}
 		
 		if(current - TBLastTime > RaceConfig.MinuteBoltInterval){
+		    ++DEBUG_sendEmptyTupleCount;
 			sendEmptyTBPayMessage();
+		}
+		
+		if (_paymentMsgEndSignal.get() && current - _latestMsgArrivedTime.get() > CONSUMER_MAX_WAITING_TIME) {
+		    logDebugInfo();
+		    JStormUtils.sleepMs(2000);
 		}
 		
 	}
@@ -282,6 +311,14 @@ public class AllSpout implements IRichSpout{
 	public Map<String, Object> getComponentConfiguration() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	public void logDebugInfo() {
+	    LOG.info("[AllSpout.logDebugInfo] DEBUG_receivedPaymentMsgCount:{}", DEBUG_receivedPaymentMsgCount);
+	    LOG.info("[AllSpout.logDebugInfo] DEBUG_sendTupleNormallyCount:{}", DEBUG_sendTupleNormallyCount);
+	    LOG.info("[AllSpout.logDebugInfo] DEBUG_sendUnsolvedTupleCount:{}", DEBUG_sendUnsolvedTupleCount);
+	    LOG.info("[AllSpout.logDebugInfo] DEBUG_sendEmptyTupleCount:{}", DEBUG_sendEmptyTupleCount);
+	    LOG.info("[AllSpout.logDebugInfo] DEBUG_failedTupleCount:{}", DEBUG_failedTupleCount);
 	}
 
 }
