@@ -10,6 +10,7 @@ import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.Tair.TairOperatorImpl;
 import com.alibaba.middleware.race.jstorm.RaceTopology;
 import com.alibaba.middleware.race.rocketmq.CounterFactory;
+import com.alibaba.middleware.race.util.DoubleUtil;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.BasicOutputCollector;
@@ -50,7 +51,7 @@ public class TBCounterWriter implements IBasicBolt{
 		
 		sum.put(key, sum.get(key) + value);
 		
-		tairOperator.write(RaceConfig.prex_taobao + key, sum.get(key));
+		tairOperator.write(RaceConfig.prex_taobao + key, DoubleUtil.roundedTo2Digit(sum.get(key)));
 //		LOG.info("TBCounterWriter: " + RaceConfig.prex_taobao + key + " " + sum.get(key));
 	}
 

@@ -10,6 +10,8 @@ import com.alibaba.middleware.race.Constants;
 import com.alibaba.middleware.race.util.FileUtil;
 
 public class CorrectRateCalculator {
+    private static final double DIFF_THREHOLD = 1e-6;
+
     private static final Logger LOG = LoggerFactory.getLogger(CorrectRateCalculator.class);
 
     public static void main(String [] args) throws Exception {
@@ -43,7 +45,7 @@ public class CorrectRateCalculator {
         }
         int correctCnt = 0;
         for (Entry<String, Double> entry : expectedResultMap.entrySet()) {
-            if(entry.getValue().equals(actualResultMap.get(entry.getKey()))) {
+            if(entry.getValue() - actualResultMap.get(entry.getKey()) < DIFF_THREHOLD) {
                 ++correctCnt;
             }
         }

@@ -10,6 +10,7 @@ import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.Tair.TairOperatorImpl;
 import com.alibaba.middleware.race.jstorm.RaceTopology;
 import com.alibaba.middleware.race.rocketmq.CounterFactory;
+import com.alibaba.middleware.race.util.DoubleUtil;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.BasicOutputCollector;
@@ -56,8 +57,8 @@ public class RatioWriter implements IBasicBolt{
 				
 				if(entryKey >= key){
 					PCSumCounter.put(entryKey, PCSumCounter.get(entryKey) + value);
-					
-					tairOperator.write(RaceConfig.prex_ratio + entryKey, WirelessSumCounter.get(entryKey) / PCSumCounter.get(entryKey));
+					double ratio = WirelessSumCounter.get(entryKey) / PCSumCounter.get(entryKey);
+					tairOperator.write(RaceConfig.prex_ratio + entryKey, DoubleUtil.roundedTo2Digit(ratio));
 //					LOG.info("Ratio Writer:" + entryKey + ":" + WirelessSumCounter.get(entryKey) / PCSumCounter.get(entryKey));
 				}
 			}			
@@ -68,8 +69,8 @@ public class RatioWriter implements IBasicBolt{
 				
 				if(entryKey >= key){
 					WirelessSumCounter.put(entryKey, WirelessSumCounter.get(entryKey) + value);
-					
-					tairOperator.write(RaceConfig.prex_ratio + entryKey, WirelessSumCounter.get(entryKey) / PCSumCounter.get(entryKey));
+					double ratio = WirelessSumCounter.get(entryKey) / PCSumCounter.get(entryKey);
+					tairOperator.write(RaceConfig.prex_ratio + entryKey, DoubleUtil.roundedTo2Digit(ratio));
 //					LOG.info("Ratio Writer:" + entryKey + ":" + WirelessSumCounter.get(entryKey) / PCSumCounter.get(entryKey));
 				}
 			}

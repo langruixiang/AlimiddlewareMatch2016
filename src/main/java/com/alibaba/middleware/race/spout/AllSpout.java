@@ -44,15 +44,16 @@ public class AllSpout implements IRichSpout{
 	
 	private long TMLastTime = 0;
 	private long TBLastTime = 0;
+	private int _sendNumPerNexttuple = RaceConfig.DEFAULT_SEND_NUMBER_PER_NEXT_TUPLE;
 
-	AtomicInteger DEBUG_receivedPaymentMsgCount = new AtomicInteger(0);//TODO just for debug
-	long DEBUG_sendTupleNormallyCount = 0;
-	long DEBUG_sendUnsolvedTupleCount = 0;
-	long DEBUG_sendEmptyTupleCount = 0;
-	long DEBUG_failedTupleCount = 0;
+	private AtomicInteger DEBUG_receivedPaymentMsgCount = new AtomicInteger(0);//TODO just for debug
+	private long DEBUG_sendTupleNormallyCount = 0;
+	private long DEBUG_sendUnsolvedTupleCount = 0;
+	private long DEBUG_sendEmptyTupleCount = 0;
+	private long DEBUG_failedTupleCount = 0;
 
-	AtomicBoolean _paymentMsgEndSignal = new AtomicBoolean(false);
-	AtomicLong _latestMsgArrivedTime = new AtomicLong(0);
+	private AtomicBoolean _paymentMsgEndSignal = new AtomicBoolean(false);
+	private AtomicLong _latestMsgArrivedTime = new AtomicLong(0);
 	private static final long CONSUMER_MAX_WAITING_TIME = 1 * 60 * 1000;//此时间内收不到任何消息，且_paymentMsgEndSignal为true,则认为所有消息接收完成
 	
 	private transient LinkedBlockingQueue<PaymentMessage> payMessageQueue;
@@ -243,17 +244,19 @@ public class AllSpout implements IRichSpout{
 	public void nextTuple() {
 		// TODO Auto-generated method stub
 		
-		if(!payMessageQueue.isEmpty()){
-			try {
-				PaymentMessage paymentMessage = payMessageQueue.take();
-				solvePayMentmessage(paymentMessage);
-				++DEBUG_sendTupleNormallyCount;
+	    for (int i = 0; i < _sendNumPerNexttuple; ++i) {
+	        if(!payMessageQueue.isEmpty()){
+	            try {
+	                PaymentMessage paymentMessage = payMessageQueue.take();
+	                solvePayMentmessage(paymentMessage);
+	                ++DEBUG_sendTupleNormallyCount;
 
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
+	            } catch (InterruptedException e) {
+	                // TODO Auto-generated catch block
+	                e.printStackTrace();
+	            }
+	        }
+	    }
 		
 		if(!unSolvedMessage.isEmpty()){
 			try {
@@ -280,7 +283,10 @@ public class AllSpout implements IRichSpout{
 			sendEmptyTBPayMessage();
 		}
 		
-		if (_paymentMsgEndSignal.get() && current - _latestMsgArrivedTime.get() > CONSUMER_MAX_WAITING_TIME) {
+		if (payMessageQueue.isEmpty()
+		        && unSolvedMessage.isEmpty()
+		        && _paymentMsgEndSignal.get()
+		        && current - _latestMsgArrivedTime.get() > CONSUMER_MAX_WAITING_TIME) {
 		    logDebugInfo();
 		    JStormUtils.sleepMs(2000);
 		}
@@ -291,6 +297,8 @@ public class AllSpout implements IRichSpout{
 	public void open(Map conf, TopologyContext arg1, SpoutOutputCollector collector) {
 		// TODO Auto-generated method stub
 		_collector = collector;
+        _sendNumPerNexttuple = JStormUtils.parseInt(
+                conf.get("send.num.each.time"), RaceConfig.DEFAULT_SEND_NUMBER_PER_NEXT_TUPLE);
 		
 		try {
 			initPayConsumer();

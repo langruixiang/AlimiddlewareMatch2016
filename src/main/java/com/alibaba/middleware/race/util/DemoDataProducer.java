@@ -146,14 +146,14 @@ public class DemoDataProducer {
         // output taobao results
         for (Map.Entry<Long, Double> entry : tbCounter.entrySet()) {
             if (entry.getValue() > 0.0) {
-                outputExpectedResult(RaceConfig.prex_taobao + entry.getKey(), entry.getValue());
+                outputExpectedResult(RaceConfig.prex_taobao + entry.getKey(), DoubleUtil.roundedTo2Digit(entry.getValue()));
             }
         }
 
         // output tmall results
         for (Map.Entry<Long, Double> entry : tmCounter.entrySet()) {
             if (entry.getValue() > 0.0) {
-                outputExpectedResult(RaceConfig.prex_tmall + entry.getKey(), entry.getValue());
+                outputExpectedResult(RaceConfig.prex_tmall + entry.getKey(), DoubleUtil.roundedTo2Digit(entry.getValue()));
             }
         }
 
@@ -169,7 +169,7 @@ public class DemoDataProducer {
                 ratio = wirelessSum / pcSum;
             }
             if (ratio > 0.0) {
-                outputExpectedResult(RaceConfig.prex_ratio + entry.getKey(), ratio);
+                outputExpectedResult(RaceConfig.prex_ratio + entry.getKey(), DoubleUtil.roundedTo2Digit(ratio));
             }
         }
         System.out.println("paymentCounter:" + paymentCounter);

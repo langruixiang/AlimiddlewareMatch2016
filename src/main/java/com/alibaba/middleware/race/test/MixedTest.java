@@ -6,9 +6,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import com.alibaba.middleware.race.util.DoubleUtil;
+
 public class MixedTest {
     public static void main(String[] args) {
-        testDoubleFormat();
+        testDoubleUtil();
     }
 
     private static void testDoubleFormat() {
@@ -36,5 +38,12 @@ public class MixedTest {
             it.remove();
         }
         System.out.println(numberList.size());
+    }
+    
+    private static void testDoubleUtil() {
+        double d = 1.554999;
+        System.out.println(DoubleUtil.roundedTo2Digit(d));
+        double d2 = 1.555111;
+        System.out.println(DoubleUtil.roundedTo2Digit(d2));
     }
 }

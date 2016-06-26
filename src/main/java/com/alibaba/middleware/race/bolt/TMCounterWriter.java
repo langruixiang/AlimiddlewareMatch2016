@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.Tair.TairOperatorImpl;
 import com.alibaba.middleware.race.rocketmq.CounterFactory;
+import com.alibaba.middleware.race.util.DoubleUtil;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.BasicOutputCollector;
@@ -49,7 +50,7 @@ public class TMCounterWriter implements IBasicBolt{
 		
 		sum.put(key, sum.get(key) + value);
 		
-		tairOperator.write(RaceConfig.prex_tmall + key, sum.get(key));
+		tairOperator.write(RaceConfig.prex_tmall + key, DoubleUtil.roundedTo2Digit(sum.get(key)));
 //		LOG.info("TMCounterWriter: " + RaceConfig.prex_tmall +  key + " " + sum.get(key));
 	}
 
