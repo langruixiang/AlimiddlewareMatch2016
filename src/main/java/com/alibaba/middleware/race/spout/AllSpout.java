@@ -47,6 +47,7 @@ public class AllSpout implements IRichSpout{
 	private int _sendNumPerNexttuple = RaceConfig.DEFAULT_SEND_NUMBER_PER_NEXT_TUPLE;
 
 	private AtomicInteger DEBUG_receivedPaymentMsgCount = new AtomicInteger(0);//TODO just for debug
+	private AtomicInteger DEBUG_amountEqualsZeroPaymentMsgCount = new AtomicInteger(0);
 	private long DEBUG_sendTupleNormallyCount = 0;
 	private long DEBUG_sendUnsolvedTupleCount = 0;
 	private long DEBUG_sendEmptyTupleCount = 0;
@@ -108,7 +109,11 @@ public class AllSpout implements IRichSpout{
 					     if(msg.getTopic().equals(RaceConfig.MqPayTopic)){
 					         DEBUG_receivedPaymentMsgCount.addAndGet(1);
 					    	 PaymentMessage paymentMessage = RaceUtils.readKryoObject(PaymentMessage.class, body);
-						     payMessageQueue.put(paymentMessage); 
+					    	 if (paymentMessage.getPayAmount() > 0.0) {
+					    	     payMessageQueue.put(paymentMessage);
+					    	 } else {
+					    	     DEBUG_amountEqualsZeroPaymentMsgCount.addAndGet(1);
+					    	 }
 					     }else if(msg.getTopic().equals(RaceConfig.MqTaobaoTradeTopic)){
 					    	 OrderMessage orderMessage = RaceUtils.readKryoObject(OrderMessage.class, body);
 						     TBTradeMessage.put(orderMessage.getOrderId(), orderMessage.getTotalPrice());
@@ -263,6 +268,9 @@ public class AllSpout implements IRichSpout{
 				PaymentMessage paymentMessage = unSolvedMessage.take();					
 				solvePayMentmessage(paymentMessage);
 				++DEBUG_sendUnsolvedTupleCount;
+				if (DEBUG_sendUnsolvedTupleCount > 2000000) {
+				    LOG.info("DEBUG_sendUnsolvedTupleCount" + ":" + paymentMessage.toString());
+				}
 
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -324,6 +332,7 @@ public class AllSpout implements IRichSpout{
 	
 	public void logDebugInfo() {
 	    LOG.info("[AllSpout.logDebugInfo] DEBUG_receivedPaymentMsgCount:{}", DEBUG_receivedPaymentMsgCount);
+	    LOG.info("[AllSpout.logDebugInfo] DEBUG_amountEqualsZeroPaymentMsgCount:{}", DEBUG_amountEqualsZeroPaymentMsgCount);
 	    LOG.info("[AllSpout.logDebugInfo] DEBUG_sendTupleNormallyCount:{}", DEBUG_sendTupleNormallyCount);
 	    LOG.info("[AllSpout.logDebugInfo] DEBUG_sendUnsolvedTupleCount:{}", DEBUG_sendUnsolvedTupleCount);
 	    LOG.info("[AllSpout.logDebugInfo] DEBUG_sendEmptyTupleCount:{}", DEBUG_sendEmptyTupleCount);
