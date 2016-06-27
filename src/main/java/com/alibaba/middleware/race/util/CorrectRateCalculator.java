@@ -45,10 +45,11 @@ public class CorrectRateCalculator {
         }
         int correctCnt = 0;
         for (Entry<String, Double> entry : expectedResultMap.entrySet()) {
-            if(entry.getValue() - actualResultMap.get(entry.getKey()) < DIFF_THREHOLD) {
+            if(Math.abs(entry.getValue() - actualResultMap.get(entry.getKey())) < DIFF_THREHOLD) {
                 ++correctCnt;
             }
         }
+        System.out.println("correctCnt : " + correctCnt);
         return correctCnt * 1.0 / expectedResultMap.size();
     }
 }

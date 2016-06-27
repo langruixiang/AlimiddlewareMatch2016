@@ -97,4 +97,8 @@ public class PaymentMessage implements Serializable{
     public short getPayPlatform() {
         return payPlatform;
     }
+    
+    public long getUniqueToken() {
+        return orderId + createTime + (long)payAmount + paySource * 100 + payPlatform * 10000 + payPlatform * 1000000;
+    }
 }
