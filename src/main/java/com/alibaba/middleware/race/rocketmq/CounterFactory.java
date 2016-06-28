@@ -15,7 +15,7 @@ public class CounterFactory {
 	
 	static {
 		Calendar calendar = Calendar.getInstance();
-		calendar.set(2015, Calendar.NOVEMBER, 11, 0, 0);
+		calendar.set(2016, Calendar.JUNE, 28, 0, 0);
 		calendar.set(Calendar.SECOND, 0);
 		calendar.set(Calendar.MILLISECOND, 0);
 		
