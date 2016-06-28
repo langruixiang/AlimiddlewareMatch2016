@@ -6,6 +6,7 @@ import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.middleware.race.Constants;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.Tair.TairOperatorImpl;
 import com.alibaba.middleware.race.jstorm.RaceTopology;
@@ -50,7 +51,9 @@ public class RatioWriter implements IBasicBolt{
 		// TODO Auto-generated method stub
 		Long key = tuple.getLong(0);
 		Double value = tuple.getDouble(1);
-		
+		if (value < Constants.DOUBLE_DIFF_THREHOLD) {
+		    return;
+		}
 		if(tuple.getSourceComponent().equals(RaceTopology.PCSUMCOUNTERRBOLT)){
 			for(Map.Entry<Long, Double> entry : PCSumCounter.entrySet()){
 				Long entryKey = entry.getKey();

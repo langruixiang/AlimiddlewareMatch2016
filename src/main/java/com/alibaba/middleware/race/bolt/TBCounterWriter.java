@@ -6,6 +6,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.middleware.race.Constants;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.Tair.TairOperatorImpl;
 import com.alibaba.middleware.race.jstorm.RaceTopology;
@@ -49,10 +50,13 @@ public class TBCounterWriter implements IBasicBolt{
 		Long key = tuple.getLong(0);
 		Double value = tuple.getDouble(1);
 		
-		sum.put(key, sum.get(key) + value);
-		
-		tairOperator.write(RaceConfig.prex_taobao + key, DoubleUtil.roundedTo2Digit(sum.get(key)));
-//		LOG.info("TBCounterWriter: " + RaceConfig.prex_taobao + key + " " + sum.get(key));
+        if (value < Constants.DOUBLE_DIFF_THREHOLD) {
+            return;
+        }
+	    sum.put(key, sum.get(key) + value);
+        
+        tairOperator.write(RaceConfig.prex_taobao + key, DoubleUtil.roundedTo2Digit(sum.get(key)));
+        LOG.info("TBCounterWriter: " + RaceConfig.prex_taobao + key + " " + sum.get(key));
 	}
 
 	@Override

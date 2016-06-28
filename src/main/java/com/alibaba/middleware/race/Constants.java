@@ -15,4 +15,6 @@ public class Constants {
     public static final String EXPECTED_RESULT_FILE = HOME_PATH + "expectedResult.txt";
     
     public static final String ACTUAL_RESULT_FILE = HOME_PATH + "actualResult.txt";
+    
+    public static final double DOUBLE_DIFF_THREHOLD = 1e-6;
 }
