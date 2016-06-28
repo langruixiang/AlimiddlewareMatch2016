@@ -7,10 +7,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.middleware.race.Constants;
-import com.alibaba.middleware.race.util.FileUtil;
+import com.alibaba.middleware.race.RaceConfig;
+import com.alibaba.middleware.race.Tair.TairOperatorImpl;
 
 public class CorrectRateCalculator {
-    private static final double DIFF_THREHOLD = 1e-6;
+	private static TairOperatorImpl tairOperator = new TairOperatorImpl(RaceConfig.TairConfigServer, RaceConfig.TairSalveConfigServer,
+          RaceConfig.TairGroup, RaceConfig.TairNamespace);
+	
+    private static final double DIFF_THREHOLD = 1e-2;
 
     private static final Logger LOG = LoggerFactory.getLogger(CorrectRateCalculator.class);
 
@@ -19,15 +23,15 @@ public class CorrectRateCalculator {
             LOG.error(Constants.EXPECTED_RESULT_FILE + " doesn't exist!");
             return;
         }
-        if (!FileUtil.isFileExist(Constants.ACTUAL_RESULT_FILE)) {
-            LOG.error(Constants.ACTUAL_RESULT_FILE + " doesn't exist!");
-            return;
-        }
+//        if (!FileUtil.isFileExist(Constants.ACTUAL_RESULT_FILE)) {
+//            LOG.error(Constants.ACTUAL_RESULT_FILE + " doesn't exist!");
+//            return;
+//        }
 
         Map<String, Double> expectedResultMap = FileUtil.readHashMapFromFile(Constants.EXPECTED_RESULT_FILE, 5000);
-        Map<String, Double> actualResultMap = FileUtil.readHashMapFromFile(Constants.ACTUAL_RESULT_FILE, 5000);
+//        Map<String, Double> actualResultMap = FileUtil.readHashMapFromFile(Constants.ACTUAL_RESULT_FILE, 5000);
         
-        double correctRate = calculateCorrectRate(expectedResultMap, actualResultMap);
+        double correctRate = calculateCorrectRate(expectedResultMap);
         System.out.println("---------------------------------");
         System.out.println("correctRate :" + correctRate);
         System.out.println("---------------------------------");
@@ -38,14 +42,18 @@ public class CorrectRateCalculator {
      * @param actualResultMap
      */
     private static double calculateCorrectRate(
-            Map<String, Double> expectedResultMap,
-            Map<String, Double> actualResultMap) {
-        if (expectedResultMap.size() != actualResultMap.size()) {
-            LOG.warn("expectedResultMap.size() != actualResultMap.size()");
-        }
+            Map<String, Double> expectedResultMap) {
+//        if (expectedResultMap.size() != actualResultMap.size()) {
+//            LOG.warn("expectedResultMap.size() != actualResultMap.size()");
+//        }
         int correctCnt = 0;
         for (Entry<String, Double> entry : expectedResultMap.entrySet()) {
-            if(Math.abs(entry.getValue() - actualResultMap.get(entry.getKey())) < DIFF_THREHOLD) {
+        	Double actualValue = (Double) tairOperator.get(entry.getKey());
+        	LOG.info("Tair " + entry.getKey() + "=" + actualValue);
+        	if(actualValue == null){        		
+        		continue;
+        	}
+            if(Math.abs(entry.getValue() - actualValue) < DIFF_THREHOLD) {
                 ++correctCnt;
             }
         }

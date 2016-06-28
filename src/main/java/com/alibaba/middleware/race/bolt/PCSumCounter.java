@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.jstorm.RaceTopology;
 import com.alibaba.middleware.race.rocketmq.CounterFactory;
+import com.alibaba.middleware.race.rocketmq.CounterFactory.DecoratorTreeMap;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.BasicOutputCollector;
@@ -23,7 +24,7 @@ public class PCSumCounter implements IBasicBolt {
 	
 	private static Logger LOG = LoggerFactory.getLogger(PCSumCounter.class);
 	
-	private TreeMap<Long, Double> sum;
+	private DecoratorTreeMap sum;
 	private long lastTime = 0;
 	
 	@Override

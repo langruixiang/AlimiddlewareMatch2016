@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.jstorm.RaceTopology;
 import com.alibaba.middleware.race.rocketmq.CounterFactory;
+import com.alibaba.middleware.race.rocketmq.CounterFactory.DecoratorHashMap;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.BasicOutputCollector;
@@ -23,8 +24,8 @@ public class TMMinuteCounter implements IBasicBolt {
 	private static Logger LOG = LoggerFactory.getLogger(TMMinuteCounter.class);
 	private long lastTime = 0;
 	
-	private Map<Long, Double> PCCounter;
-	private Map<Long, Double> WirelessCounter;
+	private DecoratorHashMap PCCounter;
+	private DecoratorHashMap WirelessCounter;
 	
 	private int counter = 0;
 	

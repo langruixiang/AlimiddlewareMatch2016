@@ -1,6 +1,5 @@
 package com.alibaba.middleware.race.bolt;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -10,6 +9,7 @@ import com.alibaba.middleware.race.Constants;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.Tair.TairOperatorImpl;
 import com.alibaba.middleware.race.rocketmq.CounterFactory;
+import com.alibaba.middleware.race.rocketmq.CounterFactory.DecoratorHashMap;
 import com.alibaba.middleware.race.util.DoubleUtil;
 
 import backtype.storm.task.TopologyContext;
@@ -24,7 +24,7 @@ public class TMCounterWriter implements IBasicBolt{
 	private static Logger LOG = LoggerFactory.getLogger(TMCounterWriter.class);
 	
 	private transient TairOperatorImpl tairOperator;
-	private Map<Long, Double> sum;
+	private DecoratorHashMap sum;
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer arg0) {
@@ -55,7 +55,7 @@ public class TMCounterWriter implements IBasicBolt{
         sum.put(key, sum.get(key) + value);
 		
 		tairOperator.write(RaceConfig.prex_tmall + key, DoubleUtil.roundedTo2Digit(sum.get(key)));
-//		LOG.info("TMCounterWriter: " + RaceConfig.prex_tmall +  key + " " + sum.get(key));
+		LOG.info("TMCounterWriter: " + RaceConfig.prex_tmall +  key + " " + sum.get(key));
 	}
 
 	@Override
@@ -66,9 +66,9 @@ public class TMCounterWriter implements IBasicBolt{
 		
 		sum = CounterFactory.createHashCounter();
 		
-		for(Map.Entry<Long, Double> entry : sum.entrySet()){
-			tairOperator.write(RaceConfig.prex_tmall + entry.getKey(), 0.0);
-		}
+//		for(Map.Entry<Long, Double> entry : sum.entrySet()){
+//			tairOperator.write(RaceConfig.prex_tmall + entry.getKey(), 0.0);
+//		}
 	}
 
 }

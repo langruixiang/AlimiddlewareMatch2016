@@ -11,6 +11,7 @@ import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.Tair.TairOperatorImpl;
 import com.alibaba.middleware.race.jstorm.RaceTopology;
 import com.alibaba.middleware.race.rocketmq.CounterFactory;
+import com.alibaba.middleware.race.rocketmq.CounterFactory.DecoratorHashMap;
 import com.alibaba.middleware.race.util.DoubleUtil;
 
 import backtype.storm.task.TopologyContext;
@@ -25,7 +26,7 @@ public class TBCounterWriter implements IBasicBolt{
 	private static Logger LOG = LoggerFactory.getLogger(TBCounterWriter.class);
 
 	private transient TairOperatorImpl tairOperator;
-	private Map<Long, Double> sum;
+	private DecoratorHashMap sum;
 	
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer arg0) {
@@ -67,9 +68,9 @@ public class TBCounterWriter implements IBasicBolt{
 		
 		sum = CounterFactory.createHashCounter();
 		
-		for(Map.Entry<Long, Double> entry : sum.entrySet()){
-			tairOperator.write(RaceConfig.prex_taobao + entry.getKey(), 0.0);
-		}
+//		for(Map.Entry<Long, Double> entry : sum.entrySet()){
+//			tairOperator.write(RaceConfig.prex_taobao + entry.getKey(), 0.0);
+//		}
 	}
 
 }

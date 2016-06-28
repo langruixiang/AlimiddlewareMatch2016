@@ -2,6 +2,7 @@ target/mvn-eclipse-cache.properties
 target/
 data/
 nohup.out
+tmpfile/
 
 # eclipse
 .classpath

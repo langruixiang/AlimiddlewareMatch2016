@@ -120,17 +120,17 @@ public class AllSpoutTair implements IRichSpout{
 
 	private void sendEmptyPayMessage(){
 		long TMOrderID = RaceConfig.specialTMOrderID;		
-		PaymentMessage paymentMessage = new PaymentMessage(TMOrderID, 0.0, (short)0, RaceConfig.PC, CounterFactory.timeStamp[3] * 1000);
+		PaymentMessage paymentMessage = new PaymentMessage(TMOrderID, 0.0, (short)0, RaceConfig.PC, CounterFactory.timeStamp * 1000);
 		solvePayMentmessage(paymentMessage);
 		
-		paymentMessage = new PaymentMessage(TMOrderID, 0.0, (short)0, RaceConfig.Wireless, CounterFactory.timeStamp[3] * 1000);
+		paymentMessage = new PaymentMessage(TMOrderID, 0.0, (short)0, RaceConfig.Wireless, CounterFactory.timeStamp * 1000);
 		solvePayMentmessage(paymentMessage);
 		
 		long TBOrderID = RaceConfig.specialTBOrderID;
-		paymentMessage = new PaymentMessage(TBOrderID, 0.0, (short)0, RaceConfig.PC, CounterFactory.timeStamp[3] * 1000);
+		paymentMessage = new PaymentMessage(TBOrderID, 0.0, (short)0, RaceConfig.PC, CounterFactory.timeStamp * 1000);
 		solvePayMentmessage(paymentMessage);
 		
-		paymentMessage = new PaymentMessage(TBOrderID, 0.0, (short)0, RaceConfig.Wireless, CounterFactory.timeStamp[3] * 1000);
+		paymentMessage = new PaymentMessage(TBOrderID, 0.0, (short)0, RaceConfig.Wireless, CounterFactory.timeStamp * 1000);
 		solvePayMentmessage(paymentMessage);
 	}
 

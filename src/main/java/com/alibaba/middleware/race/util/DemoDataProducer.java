@@ -9,6 +9,7 @@ import com.alibaba.rocketmq.client.producer.SendResult;
 import com.alibaba.rocketmq.common.message.Message;
 import com.alibaba.middleware.race.model.*;
 import com.alibaba.middleware.race.rocketmq.CounterFactory;
+import com.alibaba.middleware.race.rocketmq.CounterFactory.DecoratorTreeMap;
 import com.alibaba.middleware.race.util.FileUtil;
 import com.alibaba.middleware.race.RaceUtils;
 
@@ -22,14 +23,14 @@ public class DemoDataProducer {
     private static Random rand = new Random();
     private static int count = 50000;
 
-    private static TreeMap<Long, Double> tmCounter = CounterFactory
+    private static DecoratorTreeMap tmCounter = CounterFactory
             .createTreeCounter();
-    private static TreeMap<Long, Double> tbCounter = CounterFactory
+    private static DecoratorTreeMap tbCounter = CounterFactory
             .createTreeCounter();
 
-    private static TreeMap<Long, Double> PCCounter = CounterFactory
+    private static DecoratorTreeMap PCCounter = CounterFactory
             .createTreeCounter();
-    private static TreeMap<Long, Double> WirelessCounter = CounterFactory
+    private static DecoratorTreeMap WirelessCounter = CounterFactory
             .createTreeCounter();
 
     private static int paymentCounter = 0;
@@ -41,7 +42,7 @@ public class DemoDataProducer {
                 RaceConfig.MetaConsumerGroup + "producer");
 
 //        producer.setNamesrvAddr(RaceConfig.MQNameServerAddr);
-        producer.setSendMsgTimeout(5000);
+        producer.setSendMsgTimeout(20000);
 
         producer.start();
 
@@ -56,8 +57,7 @@ public class DemoDataProducer {
                 final OrderMessage orderMessage = (platform == 0 ? OrderMessage
                         .createTbaoMessage() : OrderMessage
                         .createTmallMessage());
-                orderMessage.setCreateTime(CounterFactory.startTimeStamp * 1000
-                        + System.currentTimeMillis() % 86400000);
+                orderMessage.setCreateTime(System.currentTimeMillis());
 
                 byte[] body = RaceUtils.writeKryoObject(orderMessage);
 
