@@ -12,9 +12,9 @@ public class RaceConfig implements Serializable {
 
 //    public static String MQNameServerAddr = "192.168.1.101:9876"; 
     
-    public static String JstormTopologyName = "361233bpvz";
+    public static String JstormTopologyName = teamcode;
     
-    public static String MetaConsumerGroup = "361233bpvz";
+    public static String MetaConsumerGroup = teamcode;
     public static String MqPayTopic = "MiddlewareRaceTestData_Pay";
     public static String MqTmallTradeTopic = "MiddlewareRaceTestData_TMOrder";
     public static String MqTaobaoTradeTopic = "MiddlewareRaceTestData_TBOrder";
