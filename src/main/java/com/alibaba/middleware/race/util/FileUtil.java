@@ -8,6 +8,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.TreeMap;
 
 public class FileUtil {
 
@@ -97,9 +98,9 @@ public class FileUtil {
      * @param expectedResultFile
      * @return
      */
-    public static HashMap<String, Double> readHashMapFromFile(
+    public static TreeMap<String, Double> readHashMapFromFile(
             String pathname, int initialCapacity) {
-        HashMap<String, Double> retMap = new HashMap<String, Double>(initialCapacity);
+        TreeMap<String, Double> retMap = new TreeMap<String, Double>();
         BufferedReader bufferedReader;
         try {
             bufferedReader = new BufferedReader(new FileReader(pathname));

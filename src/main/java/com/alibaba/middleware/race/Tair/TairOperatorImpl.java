@@ -77,28 +77,30 @@ public class TairOperatorImpl {
     public static void main(String [] args) throws Exception {
         TairOperatorImpl tairOperator = new TairOperatorImpl(RaceConfig.TairConfigServer, RaceConfig.TairSalveConfigServer,
                 RaceConfig.TairGroup, RaceConfig.TairNamespace);
-        Long[] timeStamp = CounterFactory.timeStamp;
+//        System.out.println(CounterFactory.allTimeStamp);
+//        for(Long timeStamp : CounterFactory.allTimeStamp){
         
-        for(int i = 0; i < timeStamp.length; i++){
-        	String key = RaceConfig.prex_taobao + timeStamp[i];
+            Long timeStamp = 1467126060L;
+        	System.out.println(timeStamp);
+        	String key = RaceConfig.prex_taobao + timeStamp;
         	Double value = (Double) tairOperator.get(key);
         	if(value != null && value - 0 > 1e-6){
         		System.out.println(key + " : " + value);
         	}
         	
-        	key = RaceConfig.prex_tmall + timeStamp[i];
+        	key = RaceConfig.prex_tmall + timeStamp;
         	value = (Double) tairOperator.get(key);
         	if(value != null && value - 0 > 1e-6){
         		System.out.println(key + " : " + value);
         	}
         	
-        	key = RaceConfig.prex_ratio + timeStamp[i];
+        	key = RaceConfig.prex_ratio + timeStamp;
         	value = (Double) tairOperator.get(key);
         	if(value != null && value - 0 > 1e-6){
         		System.out.println(key + " : " + value);
         	}
-        }
-        System.out.println("Closing tair");
+//        }
+//        System.out.println("Closing tair");
         tairOperator.close();
     }
 }

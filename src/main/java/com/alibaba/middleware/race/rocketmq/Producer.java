@@ -8,6 +8,7 @@ import com.alibaba.rocketmq.client.producer.SendCallback;
 import com.alibaba.rocketmq.client.producer.SendResult;
 import com.alibaba.rocketmq.common.message.Message;
 import com.alibaba.middleware.race.model.*;
+import com.alibaba.middleware.race.rocketmq.CounterFactory.DecoratorTreeMap;
 import com.alibaba.middleware.race.RaceUtils;
 
 import java.util.Map;
@@ -19,13 +20,13 @@ import java.util.concurrent.Semaphore;
 public class Producer {
 
     private static Random rand = new Random();
-    private static int count = 100000;
+    private static int count = 1000;
     
-    private static TreeMap<Long, Double> tmCounter = CounterFactory.createTreeCounter();
-    private static TreeMap<Long, Double> tbCounter = CounterFactory.createTreeCounter();
+    private static DecoratorTreeMap tmCounter = CounterFactory.createTreeCounter();
+    private static DecoratorTreeMap tbCounter = CounterFactory.createTreeCounter();
     
-    private static TreeMap<Long, Double> PCCounter = CounterFactory.createTreeCounter();
-    private static TreeMap<Long, Double> WirelessCounter = CounterFactory.createTreeCounter();
+    private static DecoratorTreeMap PCCounter = CounterFactory.createTreeCounter();
+    private static DecoratorTreeMap WirelessCounter = CounterFactory.createTreeCounter();
     
     private static int paymentCounter = 0;
 
@@ -44,7 +45,7 @@ public class Producer {
             try {
                 final int platform = rand.nextInt(2);
                 final OrderMessage orderMessage = ( platform == 0 ? OrderMessage.createTbaoMessage() : OrderMessage.createTmallMessage());
-                orderMessage.setCreateTime(CounterFactory.startTimeStamp * 1000 + System.currentTimeMillis() % 86400000);
+                orderMessage.setCreateTime(System.currentTimeMillis());
 
                 byte [] body = RaceUtils.writeKryoObject(orderMessage);
 

@@ -1,7 +1,6 @@
 package com.alibaba.middleware.race.bolt;
 
 import java.util.Map;
-import java.util.TreeMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.jstorm.RaceTopology;
 import com.alibaba.middleware.race.rocketmq.CounterFactory;
+import com.alibaba.middleware.race.rocketmq.CounterFactory.DecoratorTreeMap;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.BasicOutputCollector;
@@ -23,7 +23,7 @@ public class WirelessSumCounter implements IBasicBolt{
 	
 	private static Logger LOG = LoggerFactory.getLogger(WirelessSumCounter.class);
 	
-	private TreeMap<Long, Double> sum;	
+	private DecoratorTreeMap sum;	
 	private long lastTime = 0;
 	
 	@Override
