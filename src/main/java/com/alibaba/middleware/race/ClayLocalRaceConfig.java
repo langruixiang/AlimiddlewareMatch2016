@@ -2,16 +2,13 @@ package com.alibaba.middleware.race;
 
 import java.io.Serializable;
 
-public class ClayRaceConfig implements Serializable {
+public class ClayLocalRaceConfig implements Serializable {
 	private static final long serialVersionUID = 4441842861070190453L;
-	public static String teamcode = "361233bpvz";
-	public static String prex_tmall = "platformTmall_" + teamcode + "_";
+    public static String teamcode = "361233bpvz";
+    public static String prex_tmall = "platformTmall_" + teamcode + "_";
     public static String prex_taobao = "platformTaobao_" + teamcode + "_";
     public static String prex_ratio = "ratio_" + teamcode + "_";
 
-
-//    public static String MQNameServerAddr = "192.168.1.101:9876"; 
-    
     public static String JstormTopologyName = teamcode;
     
     public static String MetaConsumerGroup = teamcode;
@@ -19,17 +16,16 @@ public class ClayRaceConfig implements Serializable {
     public static String MqTmallTradeTopic = "MiddlewareRaceTestData_TMOrder";
     public static String MqTaobaoTradeTopic = "MiddlewareRaceTestData_TBOrder";
     
-    public static String TairConfigServer = "10.214.192.66:5198";//192.168.1.105:5198
+    public static String TairConfigServer = "10.214.192.66:5198";
   public static String TairSalveConfigServer = "";
-    //    public static String TairConfigServer = "10.101.72.127:5198";
-//    public static String TairSalveConfigServer = "10.101.72.128:5198";
-//    public static String TairGroup = "group_tianchi";
     public static String TairGroup = "group_1";
-//    public static Integer TairNamespace = 56862;
-    public static Integer TairNamespace = 1;
+    public static Integer TairNamespace = 0;
     
     public static short PC = 0;
     public static short Wireless = 1;
+    
+    public static final short TAOBAO = 0;
+    public static final short TMALL = 1;
     
     public static Long specialTBOrderID = -1L;
     public static Long specialTMOrderID = -2L;
