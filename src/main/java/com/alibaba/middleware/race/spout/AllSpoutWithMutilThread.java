@@ -18,6 +18,7 @@ import com.alibaba.middleware.race.jstorm.RaceTopology;
 import com.alibaba.middleware.race.model.OrderMessage;
 import com.alibaba.middleware.race.model.PaymentMessage;
 import com.alibaba.middleware.race.rocketmq.CounterFactory;
+import com.alibaba.middleware.race.util.FileUtil;
 import com.alibaba.rocketmq.client.consumer.DefaultMQPushConsumer;
 import com.alibaba.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import com.alibaba.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
@@ -40,30 +41,26 @@ public class AllSpoutWithMutilThread implements IRichSpout{
 	
 	private SpoutOutputCollector _collector;
 	
-	private int paymentCounter = 0;
-	
-	private static long TMLastTime = 0;
-	private static long TBLastTime = 0;
+	private long TMLastTime = 0;
+	private long TBLastTime = 0;
 	private int _sendNumPerNexttuple = RaceConfig.DEFAULT_SEND_NUMBER_PER_NEXT_TUPLE;
 
-	private static AtomicInteger DEBUG_receivedPaymentMsgCount = new AtomicInteger(0);//TODO just for debug
-	private static AtomicInteger DEBUG_totalReceivedPaymentMsgCount = new AtomicInteger(0);
-	private static AtomicInteger DEBUG_amountEqualsZeroPaymentMsgCount = new AtomicInteger(0);
-	private static long DEBUG_sendTupleNormallyCount = 0;
-	private static long DEBUG_sendUnsolvedTupleCount = 0;
-	private static long DEBUG_sendEmptyTupleCount = 0;
-	private static long DEBUG_failedTupleCount = 0;
+	private AtomicInteger DEBUG_receivedPaymentMsgCount = new AtomicInteger(0);//TODO just for debug
+	private AtomicInteger DEBUG_amountEqualsZeroPaymentMsgCount = new AtomicInteger(0);
+	private long DEBUG_sendTupleNormallyCount = 0;
+	private long DEBUG_sendUnsolvedTupleCount = 0;
+	private long DEBUG_sendEmptyTupleCount = 0;
+	private long DEBUG_failedTupleCount = 0;
 
-	private static AtomicBoolean _paymentMsgEndSignal = new AtomicBoolean(false);
-	private static AtomicLong _latestMsgArrivedTime = new AtomicLong(0);
+	private AtomicBoolean _paymentMsgEndSignal = new AtomicBoolean(false);
+	private AtomicLong _latestMsgArrivedTime = new AtomicLong(0);
 	private static final long CONSUMER_MAX_WAITING_TIME = 1 * 60 * 1000;//此时间内收不到任何消息，且_paymentMsgEndSignal为true,则认为所有消息接收完成
 	
-	private static transient LinkedBlockingQueue<PaymentMessage> payMessageQueue;
-	private static transient LinkedBlockingQueue<PaymentMessage> unSolvedMessage;
+	private transient LinkedBlockingQueue<PaymentMessage> payMessageQueue;
+	private transient LinkedBlockingQueue<PaymentMessage> unSolvedMessage;
 	
-	private static transient ConcurrentHashMap<Long, Integer> receivedPayMessage;
-	private static transient ConcurrentHashMap<Long, Double> TMTradeMessage;
-	private static transient FixedsizeLinkedHashMap completeTMTrade;
+	private transient ConcurrentHashMap<Long, Double> TMTradeMessage;
+	private transient FixedsizeLinkedHashMap completeTMTrade;
 	
 	private static transient ConcurrentHashMap<Long, Double> TBTradeMessage;
 	private static transient FixedsizeLinkedHashMap completeTBTrade;
@@ -74,7 +71,6 @@ public class AllSpoutWithMutilThread implements IRichSpout{
 		payMessageQueue = new LinkedBlockingQueue<PaymentMessage>();
 		unSolvedMessage = new LinkedBlockingQueue<PaymentMessage>();
 		
-		receivedPayMessage = new ConcurrentHashMap<Long, Integer>(RaceConfig.MapInitCapacity);
 		TMTradeMessage = new ConcurrentHashMap<Long, Double>(RaceConfig.MapInitCapacity);
 	 	TMTradeMessage.put(RaceConfig.specialTMOrderID, 0.1);	 	
 	 	completeTMTrade = new FixedsizeLinkedHashMap(RaceConfig.MapInitCapacity);
@@ -110,20 +106,13 @@ public class AllSpoutWithMutilThread implements IRichSpout{
 					     }
 					     
 					     if(msg.getTopic().equals(RaceConfig.MqPayTopic)){
-					         DEBUG_totalReceivedPaymentMsgCount.addAndGet(1);
-					    	 PaymentMessage paymentMessage = RaceUtils.readKryoObject(PaymentMessage.class, body);
-					    	 Long paymentMsgUniqueToken = paymentMessage.getUniqueToken();
-					    	 if (!receivedPayMessage.contains(paymentMsgUniqueToken)) {
-					    	     DEBUG_receivedPaymentMsgCount.addAndGet(1);
-					    	     receivedPayMessage.put(paymentMsgUniqueToken, 1);
-					    	     if (paymentMessage.getPayAmount() > 0.0) {
-	                                 payMessageQueue.put(paymentMessage);
-	                             } else {
-	                                 DEBUG_amountEqualsZeroPaymentMsgCount.addAndGet(1);
-	                             }
-					    	 } else {
-					    	     receivedPayMessage.put(paymentMsgUniqueToken, receivedPayMessage.get(paymentMsgUniqueToken) + 1);
-					    	 }
+					         PaymentMessage paymentMessage = RaceUtils.readKryoObject(PaymentMessage.class, body);
+                             DEBUG_receivedPaymentMsgCount.addAndGet(1);
+                             if (paymentMessage.getPayAmount() > 0.0) {
+                                 payMessageQueue.put(paymentMessage);
+                             } else {
+                                 DEBUG_amountEqualsZeroPaymentMsgCount.addAndGet(1);
+                             }
 					     }else if(msg.getTopic().equals(RaceConfig.MqTaobaoTradeTopic)){
 					    	 OrderMessage orderMessage = RaceUtils.readKryoObject(OrderMessage.class, body);
 						     TBTradeMessage.put(orderMessage.getOrderId(), orderMessage.getTotalPrice());
@@ -163,8 +152,6 @@ public class AllSpoutWithMutilThread implements IRichSpout{
 	}
 
 	private void solvePayMentmessage(PaymentMessage paymentMessage){
-		paymentCounter++;
-		
 		Long orderID = paymentMessage.getOrderId();
 		
 		if(TMTradeMessage.containsKey(orderID)){
@@ -182,7 +169,6 @@ public class AllSpoutWithMutilThread implements IRichSpout{
 				TMTradeMessage.put(orderID, lastAmount - paymentMessage.getPayAmount());
 			}
 			
-			LOG.info("AllSpout Emit TMPayment" + paymentCounter + ":" + paymentMessage.toString());
 		}else if(TBTradeMessage.containsKey(orderID)){
 			Values values = new Values(paymentMessage.getOrderId(), paymentMessage.getCreateTime(), paymentMessage.getPayAmount(),
 					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
@@ -196,7 +182,6 @@ public class AllSpoutWithMutilThread implements IRichSpout{
 			}else{
 				TBTradeMessage.put(orderID, lastAmount - paymentMessage.getPayAmount());
 			}
-			LOG.info("AllSpout Emit TBPayment" + paymentCounter + ":" + paymentMessage.toString());
 		}else{
 			unSolvedMessage.add(paymentMessage);
 		}
@@ -211,14 +196,12 @@ public class AllSpoutWithMutilThread implements IRichSpout{
 			_collector.emit(RaceTopology.TMPAYSTREAM, values, paymentMessage);
 			
 			TMLastTime = System.currentTimeMillis();			
-			LOG.info("AllSpout Emit TMPayment" + paymentCounter + ":" + paymentMessage.toString());
 		}else if(TBTradeMessage.containsKey(orderID) || completeTBTrade.containsKey(orderID)){
 			Values values = new Values(paymentMessage.getOrderId(), paymentMessage.getCreateTime(), paymentMessage.getPayAmount(),
 					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
 			_collector.emit(RaceTopology.TBPAYSTREAM, values, paymentMessage);
 			
 			TBLastTime = System.currentTimeMillis();			
-			LOG.info("AllSpout Emit TBPayment" + paymentCounter + ":" + paymentMessage.toString());
 		}else{
 			unSolvedMessage.add(paymentMessage);
 		}
@@ -278,9 +261,9 @@ public class AllSpoutWithMutilThread implements IRichSpout{
 				PaymentMessage paymentMessage = unSolvedMessage.take();					
 				solvePayMentmessage(paymentMessage);
 				++DEBUG_sendUnsolvedTupleCount;
-//				if (DEBUG_sendUnsolvedTupleCount > 2000000) {
-//				    LOG.info("DEBUG_sendUnsolvedTupleCount" + ":" + paymentMessage.toString());
-//				}
+				if (DEBUG_sendUnsolvedTupleCount > 2000000 && DEBUG_sendUnsolvedTupleCount % 10000 == 0) {
+				    LOG.info("DEBUG_sendUnsolvedTupleCount" + ":" + paymentMessage.toString());
+				}
 
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -299,14 +282,14 @@ public class AllSpoutWithMutilThread implements IRichSpout{
 		if(current - TBLastTime > RaceConfig.MinuteBoltInterval){
 		    ++DEBUG_sendEmptyTupleCount;
 			sendEmptyTBPayMessage();
-			logDebugInfo();
+			logDebugInfo(true);
 		}
 		
 		if (payMessageQueue.isEmpty()
 		        && unSolvedMessage.isEmpty()
 		        && _paymentMsgEndSignal.get()
 		        && current - _latestMsgArrivedTime.get() > CONSUMER_MAX_WAITING_TIME) {
-		    logDebugInfo();
+		    logDebugInfo(true);
 		    JStormUtils.sleepMs(2000);
 		}
 		
@@ -340,14 +323,22 @@ public class AllSpoutWithMutilThread implements IRichSpout{
 		return null;
 	}
 	
-	public void logDebugInfo() {
-	    LOG.info("[AllSpout.logDebugInfo] DEBUG_totalReceivedPaymentMsgCount:{}", DEBUG_totalReceivedPaymentMsgCount);
-	    LOG.info("[AllSpout.logDebugInfo] DEBUG_receivedPaymentMsgCount:{}", DEBUG_receivedPaymentMsgCount);
-	    LOG.info("[AllSpout.logDebugInfo] DEBUG_amountEqualsZeroPaymentMsgCount:{}", DEBUG_amountEqualsZeroPaymentMsgCount);
-	    LOG.info("[AllSpout.logDebugInfo] DEBUG_sendTupleNormallyCount:{}", DEBUG_sendTupleNormallyCount);
-	    LOG.info("[AllSpout.logDebugInfo] DEBUG_sendUnsolvedTupleCount:{}", DEBUG_sendUnsolvedTupleCount);
-	    LOG.info("[AllSpout.logDebugInfo] DEBUG_sendEmptyTupleCount:{}", DEBUG_sendEmptyTupleCount);
-	    LOG.info("[AllSpout.logDebugInfo] DEBUG_failedTupleCount:{}", DEBUG_failedTupleCount);
+	public void logDebugInfo(boolean toFile) {
+	    if (toFile) {
+	        FileUtil.appendLineToFile("/home/admin/logDebugInfo.txt", Thread.currentThread().getName() + " -- DEBUG_receivedPaymentMsgCount : " + DEBUG_receivedPaymentMsgCount);
+	        FileUtil.appendLineToFile("/home/admin/logDebugInfo.txt", Thread.currentThread().getName() + " -- DEBUG_amountEqualsZeroPaymentMsgCount : " + DEBUG_amountEqualsZeroPaymentMsgCount);
+	        FileUtil.appendLineToFile("/home/admin/logDebugInfo.txt", Thread.currentThread().getName() + " -- DEBUG_sendTupleNormallyCount : " + DEBUG_sendTupleNormallyCount);
+	        FileUtil.appendLineToFile("/home/admin/logDebugInfo.txt", Thread.currentThread().getName() + " -- DEBUG_sendUnsolvedTupleCount : " + DEBUG_sendUnsolvedTupleCount);
+	        FileUtil.appendLineToFile("/home/admin/logDebugInfo.txt", Thread.currentThread().getName() + " -- DEBUG_sendEmptyTupleCount : " + DEBUG_sendEmptyTupleCount);
+	        FileUtil.appendLineToFile("/home/admin/logDebugInfo.txt", Thread.currentThread().getName() + " -- DEBUG_failedTupleCount : " + DEBUG_failedTupleCount);
+	    } else {
+	        LOG.info("[AllSpout.logDebugInfo] DEBUG_receivedPaymentMsgCount:{}", DEBUG_receivedPaymentMsgCount);
+	        LOG.info("[AllSpout.logDebugInfo] DEBUG_amountEqualsZeroPaymentMsgCount:{}", DEBUG_amountEqualsZeroPaymentMsgCount);
+	        LOG.info("[AllSpout.logDebugInfo] DEBUG_sendTupleNormallyCount:{}", DEBUG_sendTupleNormallyCount);
+	        LOG.info("[AllSpout.logDebugInfo] DEBUG_sendUnsolvedTupleCount:{}", DEBUG_sendUnsolvedTupleCount);
+	        LOG.info("[AllSpout.logDebugInfo] DEBUG_sendEmptyTupleCount:{}", DEBUG_sendEmptyTupleCount);
+	        LOG.info("[AllSpout.logDebugInfo] DEBUG_failedTupleCount:{}", DEBUG_failedTupleCount);
+	    }
 	}
 
 }
