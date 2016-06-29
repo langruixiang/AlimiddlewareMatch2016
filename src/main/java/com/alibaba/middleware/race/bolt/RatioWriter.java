@@ -55,38 +55,29 @@ public class RatioWriter implements IBasicBolt{
 		if (value < Constants.DOUBLE_DIFF_THREHOLD) {
 		    return;
 		}
+		
 		if(tuple.getSourceComponent().equals(RaceTopology.PCSUMCOUNTERRBOLT)){
-			if(!PCSumCounter.containsKey(key)){
-				PCSumCounter.put(key, 0.0);
-			}
-			
-			for(Map.Entry<Long, Double> entry : PCSumCounter.entrySet()){
-				Long entryKey = entry.getKey();
-				
-				if(entryKey >= key){
-					PCSumCounter.put(entryKey, PCSumCounter.get(entryKey) + value);
-					double ratio = WirelessSumCounter.get(entryKey) / PCSumCounter.get(entryKey);
-					tairOperator.write(RaceConfig.prex_ratio + entryKey, DoubleUtil.roundedTo2Digit(ratio));
-					LOG.info("Ratio Writer:" + entryKey + ":" + WirelessSumCounter.get(entryKey) / PCSumCounter.get(entryKey));
-				}
-			}			
-			
+			PCSumCounter.put(key, PCSumCounter.get(key) + value);			
 		}else{
-			if(!WirelessSumCounter.containsKey(key)){
-				WirelessSumCounter.put(key, 0.0);
+			WirelessSumCounter.put(key, WirelessSumCounter.get(key) + value);
+		}
+		
+		Double pcSum = 0.0;
+		Double wirelessSum = 0.0;
+		
+		for(Map.Entry<Long, Double> entry : PCSumCounter.entrySet()){
+			Long entryKey = entry.getKey();
+			
+			pcSum += PCSumCounter.get(entryKey);
+			wirelessSum += WirelessSumCounter.get(entryKey);
+			
+			if(pcSum > 1e-6){
+				double ratio = wirelessSum / pcSum;
+				tairOperator.write(RaceConfig.prex_ratio + entryKey, DoubleUtil.roundedTo2Digit(ratio));
+				LOG.info("Ratio Writer:" + entryKey + ":" + WirelessSumCounter.get(entryKey) / PCSumCounter.get(entryKey));
 			}
 			
-			for(Map.Entry<Long, Double> entry : WirelessSumCounter.entrySet()){
-				Long entryKey = entry.getKey();
-				
-				if(entryKey >= key){
-					WirelessSumCounter.put(entryKey, WirelessSumCounter.get(entryKey) + value);
-					double ratio = WirelessSumCounter.get(entryKey) / PCSumCounter.get(entryKey);
-					tairOperator.write(RaceConfig.prex_ratio + entryKey, DoubleUtil.roundedTo2Digit(ratio));
-					LOG.info("Ratio Writer:" + entryKey + ":" + WirelessSumCounter.get(entryKey) / PCSumCounter.get(entryKey));
-				}
-			}
-		}			
+		}
 	}
 		
 		
