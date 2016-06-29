@@ -1,5 +1,6 @@
 package com.alibaba.middleware.race.model;
 
+import com.alibaba.middleware.race.Constants;
 import com.alibaba.middleware.race.RaceConfig;
 
 public class PaymentMessageExt extends PaymentMessage {
@@ -33,6 +34,6 @@ public class PaymentMessageExt extends PaymentMessage {
     }
     
     public boolean isSalerPlatformTB() {
-        return _salerPlatform == RaceConfig.TAOBAO;
+        return _salerPlatform == Constants.TAOBAO;
     }
 }

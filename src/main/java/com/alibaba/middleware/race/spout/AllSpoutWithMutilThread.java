@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.middleware.race.Constants;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.RaceUtils;
 import com.alibaba.middleware.race.jstorm.RaceTopology;
@@ -130,7 +131,7 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
         try {
             long orderId = paymentMessageExt.getOrderId();
             if (TBTradeMessage.containsKey(orderId)){
-                paymentMessageExt.set_salerPlatform(RaceConfig.TAOBAO);
+                paymentMessageExt.set_salerPlatform(Constants.TAOBAO);
                 solvedPayMessageQueue.put(paymentMessageExt);
 
                 //update order
@@ -143,7 +144,7 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
 
                 ret = true;
             } else if (TMTradeMessage.containsKey(orderId)) {
-                paymentMessageExt.set_salerPlatform(RaceConfig.TMALL);
+                paymentMessageExt.set_salerPlatform(Constants.TMALL);
                 solvedPayMessageQueue.put(paymentMessageExt);
                 
                 //update order
@@ -332,11 +333,11 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
         long TMOrderID = RaceConfig.specialTMOrderID;
 
         PaymentMessageExt paymentMessageExt = new PaymentMessageExt(TMOrderID, 0.0, (short)0, RaceConfig.PC, CounterFactory.timeStamp * 1000);
-        paymentMessageExt.set_salerPlatform(RaceConfig.TMALL);
+        paymentMessageExt.set_salerPlatform(Constants.TMALL);
         sendSolvedPayMentmessageExt(paymentMessageExt);
 
         paymentMessageExt = new PaymentMessageExt(TMOrderID, 0.0, (short)0, RaceConfig.Wireless, CounterFactory.timeStamp * 1000);
-        paymentMessageExt.set_salerPlatform(RaceConfig.TMALL);
+        paymentMessageExt.set_salerPlatform(Constants.TMALL);
         sendSolvedPayMentmessageExt(paymentMessageExt);
     }
     
@@ -344,11 +345,11 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
         long TBOrderID = RaceConfig.specialTBOrderID;
 
         PaymentMessageExt paymentMessageExt = new PaymentMessageExt(TBOrderID, 0.0, (short)0, RaceConfig.PC, CounterFactory.timeStamp * 1000);
-        paymentMessageExt.set_salerPlatform(RaceConfig.TAOBAO);
+        paymentMessageExt.set_salerPlatform(Constants.TAOBAO);
         sendSolvedPayMentmessageExt(paymentMessageExt);
         
         paymentMessageExt = new PaymentMessageExt(TBOrderID, 0.0, (short)0, RaceConfig.Wireless, CounterFactory.timeStamp * 1000);
-        paymentMessageExt.set_salerPlatform(RaceConfig.TAOBAO);
+        paymentMessageExt.set_salerPlatform(Constants.TAOBAO);
         sendSolvedPayMentmessageExt(paymentMessageExt);
     }
 }

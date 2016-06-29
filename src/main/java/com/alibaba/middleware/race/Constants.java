@@ -19,4 +19,8 @@ public class Constants {
     public static final String ACTUAL_RESULT_FILE = HOME_PATH + "actualResult.txt";
     
     public static final double DOUBLE_DIFF_THREHOLD = 1e-6;
+
+    public static final short TAOBAO = 0;
+
+    public static final short TMALL = 1;
 }
