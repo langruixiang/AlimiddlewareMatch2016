@@ -52,10 +52,10 @@ public class RaceTopology {
     public static final String TBPCCOUNTERSTREAM = "TBPCCounterStream";
     public static final String TBWIRELESSSTREAM = "TBWirelessStream";
     
-    private static final int PCSumCounterParallelism = 1;
+    private static final int PCSumCounterParallelism = 3;
     public static final String PCSUMCOUNTERRBOLT = "PCSumWriterBolt";
     
-    private static final int WirelessSumCounterParallelism = 1;
+    private static final int WirelessSumCounterParallelism = 3;
     public static final String WIRELESSSUMCOUNTERBOLT = "WirelessSumBolt";
     
     /** Writer Bolt **/
@@ -84,11 +84,11 @@ public class RaceTopology {
         	   .shuffleGrouping(ALLSPOUT, TBPAYSTREAM);
         
         builder.setBolt(PCSUMCOUNTERRBOLT, new NewPCSumCounter(), PCSumCounterParallelism)
-        	   .globalGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM)
-        	   .globalGrouping(TBMINUTECOUNTERBOLT, TBPCCOUNTERSTREAM);
+        	   .shuffleGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM)
+        	   .shuffleGrouping(TBMINUTECOUNTERBOLT, TBPCCOUNTERSTREAM);
         builder.setBolt(WIRELESSSUMCOUNTERBOLT, new NewWirelessSumCounter(), WirelessSumCounterParallelism)
-        	   .globalGrouping(TMMINUTECOUNTERBOLT, TMWIRELESSSTREAM)
-        	   .globalGrouping(TBMINUTECOUNTERBOLT, TBWIRELESSSTREAM);
+        	   .shuffleGrouping(TMMINUTECOUNTERBOLT, TMWIRELESSSTREAM)
+        	   .shuffleGrouping(TBMINUTECOUNTERBOLT, TBWIRELESSSTREAM);
         
         /** Writer Bolt **/
         builder.setBolt(TMCOUNTERWRITERBOLT, new TMCounterWriter(), TMCounterWriterParallelism)
