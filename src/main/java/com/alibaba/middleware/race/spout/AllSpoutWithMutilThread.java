@@ -236,24 +236,13 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
             }
         }
         
-        Long current = System.currentTimeMillis();
-        
-        if(current - TMLastTime > RaceConfig.MinuteBoltInterval){
-            ++DEBUG_sendEmptyTupleCount;
-            sendEmptyTMPayMessage();
-        }
-        
-        if(current - TBLastTime > RaceConfig.MinuteBoltInterval){
-            ++DEBUG_sendEmptyTupleCount;
-            sendEmptyTBPayMessage();
-            logDebugInfo(true);
-        }
-        
+        long current = System.currentTimeMillis();
         if (solvedPayMessageQueue.isEmpty()
                 && unSolvedPayMessageQueue.isEmpty()
                 && _paymentMsgEndSignal.get()
                 && current - _latestMsgArrivedTime.get() > CONSUMER_MAX_WAITING_TIME) {
-            logDebugInfo(true);
+//            sendEndSignals();
+            logDebugInfo();
             JStormUtils.sleepMs(2000);
         }
         
@@ -288,22 +277,13 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
         return null;
     }
     
-    public void logDebugInfo(boolean toFile) {
-        if (toFile) {
-            FileUtil.appendLineToFile("/home/admin/logDebugInfo.txt", Thread.currentThread().getName() + " -- DEBUG_receivedPaymentMsgCount : " + DEBUG_receivedPaymentMsgCount);
-            FileUtil.appendLineToFile("/home/admin/logDebugInfo.txt", Thread.currentThread().getName() + " -- DEBUG_amountEqualsZeroPaymentMsgCount : " + DEBUG_amountEqualsZeroPaymentMsgCount);
-            FileUtil.appendLineToFile("/home/admin/logDebugInfo.txt", Thread.currentThread().getName() + " -- DEBUG_sendTupleNormallyCount : " + DEBUG_sendTupleNormallyCount);
-            FileUtil.appendLineToFile("/home/admin/logDebugInfo.txt", Thread.currentThread().getName() + " -- DEBUG_solveFailedCount : " + DEBUG_solveFailedCount);
-            FileUtil.appendLineToFile("/home/admin/logDebugInfo.txt", Thread.currentThread().getName() + " -- DEBUG_sendEmptyTupleCount : " + DEBUG_sendEmptyTupleCount);
-            FileUtil.appendLineToFile("/home/admin/logDebugInfo.txt", Thread.currentThread().getName() + " -- DEBUG_failedTupleCount : " + DEBUG_failedTupleCount);
-        } else {
-            LOG.info("[AllSpout.logDebugInfo] DEBUG_receivedPaymentMsgCount:{}", DEBUG_receivedPaymentMsgCount);
-            LOG.info("[AllSpout.logDebugInfo] DEBUG_amountEqualsZeroPaymentMsgCount:{}", DEBUG_amountEqualsZeroPaymentMsgCount);
-            LOG.info("[AllSpout.logDebugInfo] DEBUG_sendTupleNormallyCount:{}", DEBUG_sendTupleNormallyCount);
-            LOG.info("[AllSpout.logDebugInfo] DEBUG_solveFailedCount:{}", DEBUG_solveFailedCount);
-            LOG.info("[AllSpout.logDebugInfo] DEBUG_sendEmptyTupleCount:{}", DEBUG_sendEmptyTupleCount);
-            LOG.info("[AllSpout.logDebugInfo] DEBUG_failedTupleCount:{}", DEBUG_failedTupleCount);
-        }
+    public void logDebugInfo() {
+        LOG.info("[AllSpout.logDebugInfo] DEBUG_receivedPaymentMsgCount:{}", DEBUG_receivedPaymentMsgCount);
+        LOG.info("[AllSpout.logDebugInfo] DEBUG_amountEqualsZeroPaymentMsgCount:{}", DEBUG_amountEqualsZeroPaymentMsgCount);
+        LOG.info("[AllSpout.logDebugInfo] DEBUG_sendTupleNormallyCount:{}", DEBUG_sendTupleNormallyCount);
+        LOG.info("[AllSpout.logDebugInfo] DEBUG_solveFailedCount:{}", DEBUG_solveFailedCount);
+        LOG.info("[AllSpout.logDebugInfo] DEBUG_sendEmptyTupleCount:{}", DEBUG_sendEmptyTupleCount);
+        LOG.info("[AllSpout.logDebugInfo] DEBUG_failedTupleCount:{}", DEBUG_failedTupleCount);
     }
 
     @Override
@@ -328,28 +308,14 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
             }
         }
     }
-
-    private void sendEmptyTMPayMessage() {
-        long TMOrderID = RaceConfig.specialTMOrderID;
-
-        PaymentMessageExt paymentMessageExt = new PaymentMessageExt(TMOrderID, 0.0, (short)0, RaceConfig.PC, CounterFactory.timeStamp * 1000);
-        paymentMessageExt.set_salerPlatform(Constants.TMALL);
-        sendSolvedPayMentmessageExt(paymentMessageExt);
-
-        paymentMessageExt = new PaymentMessageExt(TMOrderID, 0.0, (short)0, RaceConfig.Wireless, CounterFactory.timeStamp * 1000);
-        paymentMessageExt.set_salerPlatform(Constants.TMALL);
-        sendSolvedPayMentmessageExt(paymentMessageExt);
-    }
-    
-    private void sendEmptyTBPayMessage(){
-        long TBOrderID = RaceConfig.specialTBOrderID;
-
-        PaymentMessageExt paymentMessageExt = new PaymentMessageExt(TBOrderID, 0.0, (short)0, RaceConfig.PC, CounterFactory.timeStamp * 1000);
-        paymentMessageExt.set_salerPlatform(Constants.TAOBAO);
-        sendSolvedPayMentmessageExt(paymentMessageExt);
-        
-        paymentMessageExt = new PaymentMessageExt(TBOrderID, 0.0, (short)0, RaceConfig.Wireless, CounterFactory.timeStamp * 1000);
-        paymentMessageExt.set_salerPlatform(Constants.TAOBAO);
-        sendSolvedPayMentmessageExt(paymentMessageExt);
-    }
+//    private void sendEndSignals() {
+//        LOG.info("sending end signals...");
+//        PaymentMessageExt paymentMessageExt = new PaymentMessageExt(0, 0.0, (short)0, RaceConfig.PC, Constants.END_SIGNAL_CREATE_TIME);
+//        paymentMessageExt.set_salerPlatform(Constants.TAOBAO);
+//        sendSolvedPayMentmessageExt(paymentMessageExt);
+//
+//        paymentMessageExt = new PaymentMessageExt(0, 0.0, (short)0, RaceConfig.PC, Constants.END_SIGNAL_CREATE_TIME);
+//        paymentMessageExt.set_salerPlatform(Constants.TMALL);
+//        sendSolvedPayMentmessageExt(paymentMessageExt);
+//    }
 }

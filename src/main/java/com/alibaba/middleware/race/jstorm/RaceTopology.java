@@ -5,6 +5,10 @@ import backtype.storm.StormSubmitter;
 import backtype.storm.topology.TopologyBuilder;
 
 import com.alibaba.middleware.race.RaceConfig;
+import com.alibaba.middleware.race.bolt.NewPCSumCounter;
+import com.alibaba.middleware.race.bolt.NewTBMinuteCounter;
+import com.alibaba.middleware.race.bolt.NewTMMinuteCounter;
+import com.alibaba.middleware.race.bolt.NewWirelessSumCounter;
 import com.alibaba.middleware.race.bolt.TMCounterWriter;
 import com.alibaba.middleware.race.bolt.PCSumCounter;
 import com.alibaba.middleware.race.bolt.RatioWriter;
@@ -74,15 +78,15 @@ public class RaceTopology {
         builder.setSpout(ALLSPOUT, new AllSpoutWithMutilThread(), AllSpoutParallelism);
         
         /** Counter Bolt **/
-        builder.setBolt(TMMINUTECOUNTERBOLT, new TMMinuteCounter(), TMMinuteCounterParallelism)
+        builder.setBolt(TMMINUTECOUNTERBOLT, new NewTMMinuteCounter(), TMMinuteCounterParallelism)
         	   .shuffleGrouping(ALLSPOUT, TMPAYSTREAM);
-        builder.setBolt(TBMINUTECOUNTERBOLT, new TBMinuteCounter(), TBMinuteCounterParallelism)
+        builder.setBolt(TBMINUTECOUNTERBOLT, new NewTBMinuteCounter(), TBMinuteCounterParallelism)
         	   .shuffleGrouping(ALLSPOUT, TBPAYSTREAM);
         
-        builder.setBolt(PCSUMCOUNTERRBOLT, new PCSumCounter(), PCSumCounterParallelism)
+        builder.setBolt(PCSUMCOUNTERRBOLT, new NewPCSumCounter(), PCSumCounterParallelism)
         	   .globalGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM)
         	   .globalGrouping(TBMINUTECOUNTERBOLT, TBPCCOUNTERSTREAM);
-        builder.setBolt(WIRELESSSUMCOUNTERBOLT, new WirelessSumCounter(), WirelessSumCounterParallelism)
+        builder.setBolt(WIRELESSSUMCOUNTERBOLT, new NewWirelessSumCounter(), WirelessSumCounterParallelism)
         	   .globalGrouping(TMMINUTECOUNTERBOLT, TMWIRELESSSTREAM)
         	   .globalGrouping(TBMINUTECOUNTERBOLT, TBWIRELESSSTREAM);
         

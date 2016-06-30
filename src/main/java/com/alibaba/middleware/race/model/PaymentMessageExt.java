@@ -1,14 +1,13 @@
 package com.alibaba.middleware.race.model;
 
 import com.alibaba.middleware.race.Constants;
-import com.alibaba.middleware.race.RaceConfig;
 
 public class PaymentMessageExt extends PaymentMessage {
 
     private static final long serialVersionUID = -3480458913319354369L;
     
     public static final short UNSOLVED_PLATFORM = -1;
-
+    
     private short _salerPlatform = UNSOLVED_PLATFORM;
 
     public PaymentMessageExt(PaymentMessage paymentMessage) {
