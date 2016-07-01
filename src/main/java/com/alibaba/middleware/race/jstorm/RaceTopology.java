@@ -5,18 +5,11 @@ import backtype.storm.StormSubmitter;
 import backtype.storm.topology.TopologyBuilder;
 
 import com.alibaba.middleware.race.RaceConfig;
-import com.alibaba.middleware.race.bolt.NewPCSumCounter;
 import com.alibaba.middleware.race.bolt.NewTBMinuteCounter;
 import com.alibaba.middleware.race.bolt.NewTMMinuteCounter;
-import com.alibaba.middleware.race.bolt.NewWirelessSumCounter;
 import com.alibaba.middleware.race.bolt.TMCounterWriter;
-import com.alibaba.middleware.race.bolt.PCSumCounter;
 import com.alibaba.middleware.race.bolt.RatioWriter;
 import com.alibaba.middleware.race.bolt.TBCounterWriter;
-import com.alibaba.middleware.race.bolt.TBMinuteCounter;
-import com.alibaba.middleware.race.bolt.TMMinuteCounter;
-import com.alibaba.middleware.race.bolt.WirelessSumCounter;
-import com.alibaba.middleware.race.spout.AllSpout;
 import com.alibaba.middleware.race.spout.AllSpoutWithMutilThread;
 
 import org.slf4j.Logger;
@@ -42,21 +35,21 @@ public class RaceTopology {
     public static final String TBPAYSTREAM = "TBPayStream";
     
     /** Counter Bolt **/
-    private static final int TMMinuteCounterParallelism = 3;
+    private static final int TMMinuteCounterParallelism = 10;
     public static final String TMMINUTECOUNTERBOLT = "TMMinuteCounterBolt";    
     public static final String TMPCCOUNTERSTREAM = "TMPCCounterStream";
     public static final String TMWIRELESSSTREAM = "TMWirelessStream"; 
     
-    private static final int TBMinuteCounterParallelism = 3;
+    private static final int TBMinuteCounterParallelism = 10;
     public static final String TBMINUTECOUNTERBOLT = "TBMinuteCounterBolt";
     public static final String TBPCCOUNTERSTREAM = "TBPCCounterStream";
     public static final String TBWIRELESSSTREAM = "TBWirelessStream";
     
-    private static final int PCSumCounterParallelism = 3;
-    public static final String PCSUMCOUNTERRBOLT = "PCSumWriterBolt";
+//    private static final int PCSumCounterParallelism = 3;
+//    public static final String PCSUMCOUNTERRBOLT = "PCSumWriterBolt";
     
-    private static final int WirelessSumCounterParallelism = 3;
-    public static final String WIRELESSSUMCOUNTERBOLT = "WirelessSumBolt";
+//    private static final int WirelessSumCounterParallelism = 3;
+//    public static final String WIRELESSSUMCOUNTERBOLT = "WirelessSumBolt";
     
     /** Writer Bolt **/
     private static final int TMCounterWriterParallelism = 1;
@@ -83,12 +76,12 @@ public class RaceTopology {
         builder.setBolt(TBMINUTECOUNTERBOLT, new NewTBMinuteCounter(), TBMinuteCounterParallelism)
         	   .shuffleGrouping(ALLSPOUT, TBPAYSTREAM);
         
-        builder.setBolt(PCSUMCOUNTERRBOLT, new NewPCSumCounter(), PCSumCounterParallelism)
-        	   .shuffleGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM)
-        	   .shuffleGrouping(TBMINUTECOUNTERBOLT, TBPCCOUNTERSTREAM);
-        builder.setBolt(WIRELESSSUMCOUNTERBOLT, new NewWirelessSumCounter(), WirelessSumCounterParallelism)
-        	   .shuffleGrouping(TMMINUTECOUNTERBOLT, TMWIRELESSSTREAM)
-        	   .shuffleGrouping(TBMINUTECOUNTERBOLT, TBWIRELESSSTREAM);
+//        builder.setBolt(PCSUMCOUNTERRBOLT, new NewPCSumCounter(), PCSumCounterParallelism)
+//        	   .shuffleGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM)
+//        	   .shuffleGrouping(TBMINUTECOUNTERBOLT, TBPCCOUNTERSTREAM);
+//        builder.setBolt(WIRELESSSUMCOUNTERBOLT, new NewWirelessSumCounter(), WirelessSumCounterParallelism)
+//        	   .shuffleGrouping(TMMINUTECOUNTERBOLT, TMWIRELESSSTREAM)
+//        	   .shuffleGrouping(TBMINUTECOUNTERBOLT, TBWIRELESSSTREAM);
         
         /** Writer Bolt **/
         builder.setBolt(TMCOUNTERWRITERBOLT, new TMCounterWriter(), TMCounterWriterParallelism)
@@ -99,8 +92,10 @@ public class RaceTopology {
  	           .globalGrouping(TBMINUTECOUNTERBOLT, TBWIRELESSSTREAM);
         
         builder.setBolt(RATIONWRITERBOLT, new RatioWriter(), RationCounterParallelism)
-	           .globalGrouping(PCSUMCOUNTERRBOLT)
-	           .globalGrouping(WIRELESSSUMCOUNTERBOLT);
+               .globalGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM)
+               .globalGrouping(TMMINUTECOUNTERBOLT, TMWIRELESSSTREAM)
+               .globalGrouping(TBMINUTECOUNTERBOLT, TBPCCOUNTERSTREAM)
+               .globalGrouping(TBMINUTECOUNTERBOLT, TBWIRELESSSTREAM);
 
         
         String topologyName = RaceConfig.JstormTopologyName;

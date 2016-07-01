@@ -56,7 +56,8 @@ public class RatioWriter implements IBasicBolt{
 		    return;
 		}
 		
-		if(tuple.getSourceComponent().equals(RaceTopology.PCSUMCOUNTERRBOLT)){
+		if(tuple.getSourceStreamId().equals(RaceTopology.TMPCCOUNTERSTREAM)
+		        || tuple.getSourceStreamId().equals(RaceTopology.TBPCCOUNTERSTREAM)){
 			PCSumCounter.put(key, PCSumCounter.get(key) + value);			
 		}else{
 			WirelessSumCounter.put(key, WirelessSumCounter.get(key) + value);

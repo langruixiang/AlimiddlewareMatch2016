@@ -53,6 +53,6 @@ public class RaceConfig implements Serializable {
     
     public static int MQBatchSize = 1000;
     
-    public static final int DEFAULT_SEND_NUMBER_PER_NEXT_TUPLE = 4;
+    public static final int DEFAULT_SEND_NUMBER_PER_NEXT_TUPLE = 10;
 
 }
