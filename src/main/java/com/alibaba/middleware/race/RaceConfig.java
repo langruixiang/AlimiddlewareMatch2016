@@ -28,7 +28,7 @@ public class RaceConfig implements Serializable {
 /***********Config Value For Local***************/
 //    public static String JstormTopologyName = "race";
 //    
-//    public static String MetaConsumerGroup = "group33";
+//    public static String MetaConsumerGroup = "group2";
 //    public static String MqPayTopic = "MiddlewareRaceTestData_Pay";
 //    public static String MqTmallTradeTopic = "MiddlewareRaceTestData_TMOrder";
 //    public static String MqTaobaoTradeTopic = "MiddlewareRaceTestData_TBOrder";
@@ -53,7 +53,7 @@ public class RaceConfig implements Serializable {
     
     public static int MQBatchSize = 1000;
     
-    public static int SpoutMaxPending = 500000;
+    public static int SpoutMaxPending = 100000;
     
     public static final int DEFAULT_SEND_NUMBER_PER_NEXT_TUPLE = 10;
 

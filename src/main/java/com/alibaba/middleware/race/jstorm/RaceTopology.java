@@ -35,12 +35,12 @@ public class RaceTopology {
     public static final String TBPAYSTREAM = "TBPayStream";
     
     /** Counter Bolt **/
-    private static final int TMMinuteCounterParallelism = 10;
+    private static final int TMMinuteCounterParallelism = 4;
     public static final String TMMINUTECOUNTERBOLT = "TMMinuteCounterBolt";    
     public static final String TMPCCOUNTERSTREAM = "TMPCCounterStream";
     public static final String TMWIRELESSSTREAM = "TMWirelessStream"; 
     
-    private static final int TBMinuteCounterParallelism = 10;
+    private static final int TBMinuteCounterParallelism = 4;
     public static final String TBMINUTECOUNTERBOLT = "TBMinuteCounterBolt";
     public static final String TBPCCOUNTERSTREAM = "TBPCCounterStream";
     public static final String TBWIRELESSSTREAM = "TBWirelessStream";
@@ -103,7 +103,7 @@ public class RaceTopology {
         Config conf = new Config();
         conf.setNumWorkers(4);
         conf.setMessageTimeoutSecs(120);
-        conf.setMaxSpoutPending(RaceConfig.SpoutMaxPending);
+//        conf.setMaxSpoutPending(RaceConfig.SpoutMaxPending);
         
         try {
             StormSubmitter.submitTopology(topologyName, conf, builder.createTopology());
