@@ -25,7 +25,7 @@ public class RaceConfig implements Serializable {
     public static String TairGroup = "group_tianchi";
     public static Integer TairNamespace = 56862;
     
-/***********Config Value For Local***************/
+///***********Config Value For Local***************/
 //    public static String JstormTopologyName = "race";
 //    
 //    public static String MetaConsumerGroup = "group2";
