@@ -1,19 +1,19 @@
 package com.alibaba.middleware.race.jstorm;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.alibaba.middleware.race.RaceConfig;
+import com.alibaba.middleware.race.bolt.RatioWriter;
+import com.alibaba.middleware.race.bolt.TBCounterWriter;
+import com.alibaba.middleware.race.bolt.TBMinuteCounter;
+import com.alibaba.middleware.race.bolt.TMCounterWriter;
+import com.alibaba.middleware.race.bolt.TMMinuteCounter;
+import com.alibaba.middleware.race.spout.AllSpout;
+
 import backtype.storm.Config;
 import backtype.storm.StormSubmitter;
 import backtype.storm.topology.TopologyBuilder;
-
-import com.alibaba.middleware.race.RaceConfig;
-import com.alibaba.middleware.race.bolt.NewTBMinuteCounter;
-import com.alibaba.middleware.race.bolt.NewTMMinuteCounter;
-import com.alibaba.middleware.race.bolt.TMCounterWriter;
-import com.alibaba.middleware.race.bolt.RatioWriter;
-import com.alibaba.middleware.race.bolt.TBCounterWriter;
-import com.alibaba.middleware.race.spout.AllSpoutWithMutilThread;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 这是一个很简单的例子
@@ -68,12 +68,12 @@ public class RaceTopology {
         TopologyBuilder builder = new TopologyBuilder();
 
         /** Spout **/        
-        builder.setSpout(ALLSPOUT, new AllSpoutWithMutilThread(), AllSpoutParallelism);
+        builder.setSpout(ALLSPOUT, new AllSpout(), AllSpoutParallelism);
         
         /** Counter Bolt **/
-        builder.setBolt(TMMINUTECOUNTERBOLT, new NewTMMinuteCounter(), TMMinuteCounterParallelism)
+        builder.setBolt(TMMINUTECOUNTERBOLT, new TMMinuteCounter(), TMMinuteCounterParallelism)
         	   .shuffleGrouping(ALLSPOUT, TMPAYSTREAM);
-        builder.setBolt(TBMINUTECOUNTERBOLT, new NewTBMinuteCounter(), TBMinuteCounterParallelism)
+        builder.setBolt(TBMINUTECOUNTERBOLT, new TBMinuteCounter(), TBMinuteCounterParallelism)
         	   .shuffleGrouping(ALLSPOUT, TBPAYSTREAM);
         
 //        builder.setBolt(PCSUMCOUNTERRBOLT, new NewPCSumCounter(), PCSumCounterParallelism)
@@ -102,7 +102,7 @@ public class RaceTopology {
 
         Config conf = new Config();
         conf.setNumWorkers(4);
-        conf.setMessageTimeoutSecs(120);
+        conf.setMessageTimeoutSecs(90);
 //        conf.setMaxSpoutPending(RaceConfig.SpoutMaxPending);
         
         try {

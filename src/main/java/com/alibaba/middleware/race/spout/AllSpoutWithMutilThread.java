@@ -194,7 +194,7 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
     public void fail(Object paymentMessageExt) {
         // TODO Auto-generated method stub
         ++DEBUG_failedTupleCount;
-//        resendFailedPaymentMessage((PaymentMessageExt)paymentMessageExt);
+        resendFailedPaymentMessage((PaymentMessageExt)paymentMessageExt);
     }
     
     private void resendFailedPaymentMessage(PaymentMessageExt failedPaymentMessageExt){
