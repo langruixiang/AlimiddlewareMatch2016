@@ -102,8 +102,8 @@ public class RaceTopology {
 
         Config conf = new Config();
         conf.setNumWorkers(4);
-        conf.setMessageTimeoutSecs(90);
-//        conf.setMaxSpoutPending(RaceConfig.SpoutMaxPending);
+        conf.setMessageTimeoutSecs(120);
+        conf.setMaxSpoutPending(RaceConfig.SpoutMaxPending);
         
         try {
             StormSubmitter.submitTopology(topologyName, conf, builder.createTopology());
