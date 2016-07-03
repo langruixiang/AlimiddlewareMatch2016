@@ -19,8 +19,6 @@ import com.alibaba.middleware.race.jstorm.RaceTopology;
 import com.alibaba.middleware.race.model.PaymentMessageExt;
 import com.alibaba.middleware.race.model.OrderMessage;
 import com.alibaba.middleware.race.model.PaymentMessage;
-import com.alibaba.middleware.race.rocketmq.CounterFactory;
-import com.alibaba.middleware.race.util.FileUtil;
 import com.alibaba.rocketmq.client.consumer.DefaultMQPushConsumer;
 import com.alibaba.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import com.alibaba.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;

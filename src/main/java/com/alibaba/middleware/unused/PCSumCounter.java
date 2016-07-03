@@ -1,6 +1,7 @@
-package com.alibaba.middleware.race.bolt;
+package com.alibaba.middleware.unused;
 
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,37 +19,19 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
-public class WirelessSumCounter implements IBasicBolt{
-	private static final long serialVersionUID = -5742606602724597533L;
+public class PCSumCounter implements IBasicBolt {	
+	private static final long serialVersionUID = -4494419549882529722L;
 	
-	private static Logger LOG = LoggerFactory.getLogger(WirelessSumCounter.class);
+	private static Logger LOG = LoggerFactory.getLogger(PCSumCounter.class);
 	
-	private DecoratorTreeMap sum;	
+	private DecoratorTreeMap sum;
 	private long lastTime = 0;
 	
 	@Override
-	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		// TODO Auto-generated method stub
-		declarer.declare(new Fields("key", "value"));
-	}
-
-	@Override
-	public Map<String, Object> getComponentConfiguration() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void cleanup() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
 	public void execute(Tuple tuple, BasicOutputCollector collector) {
 		// TODO Auto-generated method stub
-		if(tuple.getSourceStreamId().equals(RaceTopology.TBWIRELESSSTREAM)
-				   || tuple.getSourceStreamId().equals(RaceTopology.TMWIRELESSSTREAM)){
+		if(tuple.getSourceStreamId().equals(RaceTopology.TBPCCOUNTERSTREAM)
+		   || tuple.getSourceStreamId().equals(RaceTopology.TMPCCOUNTERSTREAM)){
 			Long key = tuple.getLong(0);
 			Double value = tuple.getDouble(1);
 			
@@ -59,7 +42,7 @@ public class WirelessSumCounter implements IBasicBolt{
 			for(Map.Entry<Long, Double> entry : sum.entrySet()){
 				if(entry.getValue() - 0 > 1e-6){
 					collector.emit(new Values(entry.getKey(), entry.getValue()));
-					LOG.info("WirelessSumCounter" + entry.getKey() + " : " + entry.getValue());
+					LOG.info("PCSumCounter" + entry.getKey() + " : " + entry.getValue());
 				}
 			}
 			CounterFactory.cleanCounter(sum);				
@@ -74,4 +57,21 @@ public class WirelessSumCounter implements IBasicBolt{
 		sum = CounterFactory.createTreeCounter();
 	}
 
+	@Override
+	public void declareOutputFields(OutputFieldsDeclarer declare) {
+		// TODO Auto-generated method stub
+		declare.declare(new Fields("key", "value"));
+	}
+
+	@Override
+	public Map<String, Object> getComponentConfiguration() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void cleanup() {
+		// TODO Auto-generated method stub
+		
+	}
 }

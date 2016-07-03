@@ -1,4 +1,4 @@
-package com.alibaba.middleware.race.bolt;
+package com.alibaba.middleware.unused;
 
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -20,13 +20,13 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
-public class NewPCSumCounter implements IRichBolt, Runnable{
+public class NewWirelessSumCounter implements IRichBolt, Runnable{
 
-    private static final long serialVersionUID = 6339967899780764770L;
+    private static final long serialVersionUID = -454757273494700003L;
     private OutputCollector _collector = null;
     private static final long SEND_TUPLES_INTERVAL = 2000;
 
-    private static Logger LOG = LoggerFactory.getLogger(NewPCSumCounter.class);
+    private static Logger LOG = LoggerFactory.getLogger(NewWirelessSumCounter.class);
 	private long lastSendTime = 0;
 	
 	private DecoratorTreeMap sum = null;
@@ -41,12 +41,12 @@ public class NewPCSumCounter implements IRichBolt, Runnable{
         this._collector = collector;
         this._inputTuples = new LinkedBlockingQueue<Tuple>();
         sum = CounterFactory.createTreeCounter();
-        new Thread(this, "NewPCSumCounterProcessTuples").start();
+        new Thread(this, "NewWirelessSumCounterProcessTuples").start();
     }
 
     @Override
 	public void execute(Tuple input) {
-		LOG.info("NewPCSumCounter Counter Receive" + ++counter + input.toString());
+		LOG.info("NewWirelessSumCounter Counter Receive" + ++counter + input.toString());
 		try {
             _inputTuples.put(input);
             _collector.ack(input);//TODO
@@ -71,29 +71,29 @@ public class NewPCSumCounter implements IRichBolt, Runnable{
 		// TODO Auto-generated method stub
 		
 	}
-	
+
 	public void sendTuples() {
 	    for(Map.Entry<Long, Double> entry : sum.entrySet()){
             if(entry.getValue() - 0 > 1e-6){
                 _collector.emit(new Values(entry.getKey(), entry.getValue()));
-                LOG.info("NewPCSumCounter" + entry.getKey() + " : " + entry.getValue());
+                LOG.info("NewWirelessSumCounter" + entry.getKey() + " : " + entry.getValue());
             }
         }
         CounterFactory.cleanCounter(sum);
     }
-
+	
     @Override
     public void run() {
         while (true) {
             Tuple tuple = _inputTuples.poll();
             while (tuple != null) {
-                if(tuple.getSourceStreamId().equals(RaceTopology.TBPCCOUNTERSTREAM)
-                        || tuple.getSourceStreamId().equals(RaceTopology.TMPCCOUNTERSTREAM)){
-                     Long key = tuple.getLong(0);
-                     Double value = tuple.getDouble(1);
-                     
-                     sum.put(key, sum.get(key) + value);
-                 }
+                if(tuple.getSourceStreamId().equals(RaceTopology.TBWIRELESSSTREAM)
+                        || tuple.getSourceStreamId().equals(RaceTopology.TMWIRELESSSTREAM)){
+                 Long key = tuple.getLong(0);
+                 Double value = tuple.getDouble(1);
+                 
+                 sum.put(key, sum.get(key) + value);
+                }
                 sendTuplesIfTimeIsUp();
                 tuple = _inputTuples.poll();
             }
@@ -101,7 +101,7 @@ public class NewPCSumCounter implements IRichBolt, Runnable{
             JStormUtils.sleepMs(10);//TODO remove
         }
     }
-
+    
     private void sendTuplesIfTimeIsUp() {
         if(System.currentTimeMillis() - lastSendTime >= SEND_TUPLES_INTERVAL){
             sendTuples();
