@@ -112,7 +112,7 @@ public class NewTMMinuteCounter implements IRichBolt, Runnable{
                 tuple = _inputTuples.poll();
             }
             sendTuplesIfTimeIsUp();
-            JStormUtils.sleepMs(10);//TODO remove
+//            JStormUtils.sleepMs(10);//TODO remove
         }
     }
 

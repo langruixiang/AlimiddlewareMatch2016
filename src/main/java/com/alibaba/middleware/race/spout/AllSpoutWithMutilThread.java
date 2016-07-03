@@ -301,10 +301,9 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
                 }
             }
             if (unSolvedPayMessageQueue.isEmpty()) {
-                JStormUtils.sleepMs(2000);//TODO
+                JStormUtils.sleepMs(1);//TODO
+//                JStormUtils.sleepMs(2000);//TODO
                 LOG.info("sleeping...");
-            } else {
-                JStormUtils.sleepMs(10);//TODO
             }
         }
     }
