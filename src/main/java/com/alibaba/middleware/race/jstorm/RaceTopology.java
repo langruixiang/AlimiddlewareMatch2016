@@ -6,13 +6,17 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.bolt.NewTBMinuteCounter;
 import com.alibaba.middleware.race.bolt.NewTMMinuteCounter;
+import com.alibaba.middleware.race.bolt.PlatformDistinguish;
 import com.alibaba.middleware.race.bolt.RatioWriter;
 import com.alibaba.middleware.race.bolt.TBCounterWriter;
 import com.alibaba.middleware.race.bolt.TMCounterWriter;
 import com.alibaba.middleware.race.spout.AllSpoutWithMutilThread;
+import com.alibaba.middleware.race.spout.NewAllSpout;
+
 import backtype.storm.Config;
 import backtype.storm.StormSubmitter;
 import backtype.storm.topology.TopologyBuilder;
+import backtype.storm.tuple.Fields;
 
 /**
  * 这是一个很简单的例子
@@ -35,7 +39,7 @@ public class RaceTopology {
     public static final String TBTRADESTREAM = "TBTradeStream";
     
     /** Platform Distinguish **/
-    private static final int PlatformParallelism = 5;
+    private static final int PlatformParallelism = 3;
     public static final String PLATFORMBOLT = "PlatformBolt";  
     public static final String TMPAYSTREAM = "TMPayStream";
     public static final String TBPAYSTREAM = "TBPayStream";
@@ -74,19 +78,19 @@ public class RaceTopology {
         TopologyBuilder builder = new TopologyBuilder();
 
         /** Spout **/        
-        builder.setSpout(ALLSPOUT, new AllSpoutWithMutilThread(), AllSpoutParallelism);
+        builder.setSpout(ALLSPOUT, new NewAllSpout(), AllSpoutParallelism);
         
         /** Platform Bolt **/
-//        builder.setBolt(PLATFORMBOLT, new PlatformDistinguish(), PlatformParallelism)
-//        	   .fieldsGrouping(ALLSPOUT, PAYMENTSTREAM, new Fields("orderID"))
-//        	   .fieldsGrouping(ALLSPOUT, TMTRADESTREAM, new Fields("orderID"))
-//        	   .fieldsGrouping(ALLSPOUT, TBTRADESTREAM, new Fields("orderID"));
+        builder.setBolt(PLATFORMBOLT, new PlatformDistinguish(), PlatformParallelism)
+        	   .fieldsGrouping(ALLSPOUT, PAYMENTSTREAM, new Fields("orderID"))
+        	   .fieldsGrouping(ALLSPOUT, TMTRADESTREAM, new Fields("orderID"))
+        	   .fieldsGrouping(ALLSPOUT, TBTRADESTREAM, new Fields("orderID"));
         
         /** Counter Bolt **/
         builder.setBolt(TMMINUTECOUNTERBOLT, new NewTMMinuteCounter(), TMMinuteCounterParallelism)
-        	   .shuffleGrouping(ALLSPOUT, TMPAYSTREAM);
+        	   .shuffleGrouping(PLATFORMBOLT, TMPAYSTREAM);
         builder.setBolt(TBMINUTECOUNTERBOLT, new NewTBMinuteCounter(), TBMinuteCounterParallelism)
-        	   .shuffleGrouping(ALLSPOUT, TBPAYSTREAM);
+        	   .shuffleGrouping(PLATFORMBOLT, TBPAYSTREAM);
         
 //        builder.setBolt(PCSUMCOUNTERRBOLT, new NewPCSumCounter(), PCSumCounterParallelism)
 //        	   .shuffleGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM)
@@ -115,6 +119,7 @@ public class RaceTopology {
         Config conf = new Config();
         conf.setNumWorkers(4);
         conf.setMessageTimeoutSecs(90);
+//        conf.setNumAckers(0);
 //        conf.setMaxSpoutPending(RaceConfig.SpoutMaxPending);
         
         try {

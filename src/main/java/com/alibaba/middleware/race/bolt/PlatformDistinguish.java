@@ -1,6 +1,5 @@
 package com.alibaba.middleware.race.bolt;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -12,7 +11,6 @@ import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.middleware.race.Constants;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.jstorm.RaceTopology;
-import com.alibaba.middleware.race.model.OrderMessage;
 import com.alibaba.middleware.race.model.PaymentMessage;
 import com.alibaba.middleware.race.model.PaymentMessageExt;
 
@@ -42,8 +40,8 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declare) {
 		// TODO Auto-generated method stub
-		declare.declareStream(RaceTopology.TMPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm", "source"));
-        declare.declareStream(RaceTopology.TBPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm", "source"));
+		declare.declareStream(RaceTopology.TMPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm"));
+        declare.declareStream(RaceTopology.TBPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm"));
 
 	}
 
