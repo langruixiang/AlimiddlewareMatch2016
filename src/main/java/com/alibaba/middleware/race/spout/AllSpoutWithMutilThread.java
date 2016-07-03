@@ -68,11 +68,9 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
         this.solvedPayMessageQueue = new LinkedBlockingQueue<PaymentMessageExt>();
         this.unSolvedPayMessageQueue = new LinkedBlockingQueue<PaymentMessageExt>();
         
-        TMTradeMessage = new ConcurrentHashMap<Long, Double>(RaceConfig.MapInitCapacity);
-        TMTradeMessage.put(RaceConfig.specialTMOrderID, 0.1);       
+        TMTradeMessage = new ConcurrentHashMap<Long, Double>(RaceConfig.MapInitCapacity);      
         
         TBTradeMessage = new ConcurrentHashMap<Long, Double>(RaceConfig.MapInitCapacity);
-        TBTradeMessage.put(RaceConfig.specialTBOrderID, 0.1);
         
         consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
         consumer.subscribe(RaceConfig.MqTaobaoTradeTopic, "*");
