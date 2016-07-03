@@ -4,12 +4,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.middleware.race.RaceConfig;
+import com.alibaba.middleware.race.bolt.NewTBMinuteCounter;
+import com.alibaba.middleware.race.bolt.NewTMMinuteCounter;
 import com.alibaba.middleware.race.bolt.RatioWriter;
 import com.alibaba.middleware.race.bolt.TBCounterWriter;
 import com.alibaba.middleware.race.bolt.TBMinuteCounter;
 import com.alibaba.middleware.race.bolt.TMCounterWriter;
 import com.alibaba.middleware.race.bolt.TMMinuteCounter;
 import com.alibaba.middleware.race.spout.AllSpout;
+import com.alibaba.middleware.race.spout.AllSpoutWithMutilThread;
 
 import backtype.storm.Config;
 import backtype.storm.StormSubmitter;
@@ -35,12 +38,12 @@ public class RaceTopology {
     public static final String TBPAYSTREAM = "TBPayStream";
     
     /** Counter Bolt **/
-    private static final int TMMinuteCounterParallelism = 4;
+    private static final int TMMinuteCounterParallelism = 5;
     public static final String TMMINUTECOUNTERBOLT = "TMMinuteCounterBolt";    
     public static final String TMPCCOUNTERSTREAM = "TMPCCounterStream";
     public static final String TMWIRELESSSTREAM = "TMWirelessStream"; 
     
-    private static final int TBMinuteCounterParallelism = 4;
+    private static final int TBMinuteCounterParallelism = 5;
     public static final String TBMINUTECOUNTERBOLT = "TBMinuteCounterBolt";
     public static final String TBPCCOUNTERSTREAM = "TBPCCounterStream";
     public static final String TBWIRELESSSTREAM = "TBWirelessStream";
@@ -68,12 +71,12 @@ public class RaceTopology {
         TopologyBuilder builder = new TopologyBuilder();
 
         /** Spout **/        
-        builder.setSpout(ALLSPOUT, new AllSpout(), AllSpoutParallelism);
+        builder.setSpout(ALLSPOUT, new AllSpoutWithMutilThread(), AllSpoutParallelism);
         
         /** Counter Bolt **/
-        builder.setBolt(TMMINUTECOUNTERBOLT, new TMMinuteCounter(), TMMinuteCounterParallelism)
+        builder.setBolt(TMMINUTECOUNTERBOLT, new NewTMMinuteCounter(), TMMinuteCounterParallelism)
         	   .shuffleGrouping(ALLSPOUT, TMPAYSTREAM);
-        builder.setBolt(TBMINUTECOUNTERBOLT, new TBMinuteCounter(), TBMinuteCounterParallelism)
+        builder.setBolt(TBMINUTECOUNTERBOLT, new NewTBMinuteCounter(), TBMinuteCounterParallelism)
         	   .shuffleGrouping(ALLSPOUT, TBPAYSTREAM);
         
 //        builder.setBolt(PCSUMCOUNTERRBOLT, new NewPCSumCounter(), PCSumCounterParallelism)
@@ -102,8 +105,8 @@ public class RaceTopology {
 
         Config conf = new Config();
         conf.setNumWorkers(4);
-        conf.setMessageTimeoutSecs(120);
-        conf.setMaxSpoutPending(RaceConfig.SpoutMaxPending);
+        conf.setMessageTimeoutSecs(90);
+//        conf.setMaxSpoutPending(RaceConfig.SpoutMaxPending);
         
         try {
             StormSubmitter.submitTopology(topologyName, conf, builder.createTopology());

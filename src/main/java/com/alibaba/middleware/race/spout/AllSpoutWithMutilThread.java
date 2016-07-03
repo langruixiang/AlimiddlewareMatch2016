@@ -131,7 +131,7 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
         try {
             long orderId = paymentMessageExt.getOrderId();
             if (TBTradeMessage.containsKey(orderId)){
-                paymentMessageExt.set_salerPlatform(Constants.TAOBAO);
+                paymentMessageExt.setSalerPlatform(Constants.TAOBAO);
                 solvedPayMessageQueue.put(paymentMessageExt);
 
                 //update order
@@ -144,7 +144,7 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
 
                 ret = true;
             } else if (TMTradeMessage.containsKey(orderId)) {
-                paymentMessageExt.set_salerPlatform(Constants.TMALL);
+                paymentMessageExt.setSalerPlatform(Constants.TMALL);
                 solvedPayMessageQueue.put(paymentMessageExt);
                 
                 //update order
@@ -203,7 +203,7 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
 
     private void sendSolvedPayMentmessageExt(PaymentMessageExt solvedPaymentMessageExt){
         Values values = new Values(solvedPaymentMessageExt.getOrderId(), solvedPaymentMessageExt.getCreateTime(), solvedPaymentMessageExt.getPayAmount(),
-                solvedPaymentMessageExt.getPayPlatform(), solvedPaymentMessageExt.getPaySource());
+                solvedPaymentMessageExt.getPayPlatform());
         if (solvedPaymentMessageExt.isSalerPlatformTB()) {
             _collector.emit(RaceTopology.TBPAYSTREAM, values, solvedPaymentMessageExt);
             
@@ -267,8 +267,8 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declare) {
         // TODO Auto-generated method stub
-        declare.declareStream(RaceTopology.TMPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm", "source"));
-        declare.declareStream(RaceTopology.TBPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm", "source"));
+        declare.declareStream(RaceTopology.TMPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm"));
+        declare.declareStream(RaceTopology.TBPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm"));
     }
 
     @Override
