@@ -26,6 +26,10 @@ public class PaymentMessageExt implements Serializable {
         payPlatform = paymentMessage.getPayPlatform();
         createTime = paymentMessage.getCreateTime();
     }
+    
+    public PaymentMessageExt(){
+    	
+    }
 
     public long getOrderId() {
         return orderId;
