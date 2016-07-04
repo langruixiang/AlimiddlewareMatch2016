@@ -201,13 +201,13 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
         Values values = new Values(solvedPaymentMessageExt.getOrderId(), solvedPaymentMessageExt.getCreateTime(), solvedPaymentMessageExt.getPayAmount(),
                 solvedPaymentMessageExt.getPayPlatform());
         if (solvedPaymentMessageExt.isSalerPlatformTB()) {
-            _collector.emit(RaceTopology.TBPAYSTREAM, values, solvedPaymentMessageExt);
+            _collector.emit(RaceTopology.TBPAYSTREAM, values);
             
             TBLastTime = System.currentTimeMillis();
             
             LOG.info("AllSpout Emit TBPayment" + ":" + solvedPaymentMessageExt.toString());
         } else {
-            _collector.emit(RaceTopology.TMPAYSTREAM, values, solvedPaymentMessageExt);
+            _collector.emit(RaceTopology.TMPAYSTREAM, values);
             
             TMLastTime = System.currentTimeMillis();
             
