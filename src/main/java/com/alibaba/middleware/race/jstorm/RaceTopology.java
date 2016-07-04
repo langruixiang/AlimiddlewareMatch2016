@@ -45,12 +45,12 @@ public class RaceTopology {
     public static final String TBPAYSTREAM = "TBPayStream";
     
     /** Counter Bolt **/      
-    private static final int TMMinuteCounterParallelism = 5;
+    private static final int TMMinuteCounterParallelism = 4;
     public static final String TMMINUTECOUNTERBOLT = "TMMinuteCounterBolt";    
     public static final String TMPCCOUNTERSTREAM = "TMPCCounterStream";
     public static final String TMWIRELESSSTREAM = "TMWirelessStream"; 
     
-    private static final int TBMinuteCounterParallelism = 5;
+    private static final int TBMinuteCounterParallelism = 4;
     public static final String TBMINUTECOUNTERBOLT = "TBMinuteCounterBolt";
     public static final String TBPCCOUNTERSTREAM = "TBPCCounterStream";
     public static final String TBWIRELESSSTREAM = "TBWirelessStream";
