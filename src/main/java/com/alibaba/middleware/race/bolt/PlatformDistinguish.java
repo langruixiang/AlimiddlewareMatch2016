@@ -1,4 +1,4 @@
-package com.alibaba.middleware.unused;
+package com.alibaba.middleware.race.bolt;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,6 +11,7 @@ import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.middleware.race.Constants;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.jstorm.RaceTopology;
+import com.alibaba.middleware.race.model.OrderMessage;
 import com.alibaba.middleware.race.model.PaymentMessage;
 import com.alibaba.middleware.race.model.PaymentMessageExt;
 
@@ -40,9 +41,8 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declare) {
 		// TODO Auto-generated method stub
-		declare.declareStream(RaceTopology.TMPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm"));
-        declare.declareStream(RaceTopology.TBPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm"));
-
+		declare.declareStream(RaceTopology.TMPAYSTREAM, new Fields("TMPayMessage"));
+        declare.declareStream(RaceTopology.TBPAYSTREAM, new Fields("TBPayMessage"));
 	}
 
 	@Override
@@ -61,25 +61,21 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
 	public void execute(Tuple tuple) {
 		// TODO Auto-generated method stub
 		if(tuple.getSourceStreamId().equals(RaceTopology.PAYMENTSTREAM)){
-			Long orderID = tuple.getLong(0);
-			Long createTime = tuple.getLong(1);
-			Double payAmount = tuple.getDouble(2);
-			Short platForm = tuple.getShort(3);
-			Short source = tuple.getShort(4);
-			
-			
-			PaymentMessageExt orderMessage = new PaymentMessageExt(new PaymentMessage(orderID, payAmount, source, platForm, createTime));
+			PaymentMessage paymentMessage = (PaymentMessage) tuple.getValue(1);			
+			PaymentMessageExt orderMessage = new PaymentMessageExt(paymentMessage);
 			solvePaymentMessageExt(orderMessage);	
 			_collector.ack(tuple);
 			
 		}else if(tuple.getSourceStreamId().equals(RaceTopology.TMTRADESTREAM)){
-			Long orderID = tuple.getLong(0);
-			Double price = tuple.getDouble(1);
+			OrderMessage orderMessage = (OrderMessage) tuple.getValue(1);			
+			Long orderID = orderMessage.getOrderId();
+			Double price = orderMessage.getTotalPrice();
 			TMTradeMessage.put(orderID, price);	
 			_collector.ack(tuple);
 		}else if(tuple.getSourceStreamId().equals(RaceTopology.TBTRADESTREAM)){
-			Long orderID = tuple.getLong(0);
-			Double price = tuple.getDouble(1);	
+			OrderMessage orderMessage = (OrderMessage) tuple.getValue(1);			
+			Long orderID = orderMessage.getOrderId();
+			Double price = orderMessage.getTotalPrice();
 			TBTradeMessage.put(orderID, price);	
 			_collector.ack(tuple);
 		}
@@ -157,8 +153,7 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
 	}
 	 
 	 private void sendSolvedPayMentmessageExt(PaymentMessageExt solvedPaymentMessageExt){
-        Values values = new Values(solvedPaymentMessageExt.getOrderId(), solvedPaymentMessageExt.getCreateTime(), solvedPaymentMessageExt.getPayAmount(),
-                solvedPaymentMessageExt.getPayPlatform());
+        Values values = new Values(solvedPaymentMessageExt);
         if (solvedPaymentMessageExt.isSalerPlatformTB()) {
             _collector.emit(RaceTopology.TBPAYSTREAM, values);	            
             LOG.info("PlatformDistinguish Emit TBPayment" + ":" + solvedPaymentMessageExt.toString());

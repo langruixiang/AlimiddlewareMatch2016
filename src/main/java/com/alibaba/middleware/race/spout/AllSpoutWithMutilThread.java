@@ -132,7 +132,7 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
 
                 //update order
                 Double lastAmount = TBTradeMessage.get(orderId);
-                if(lastAmount - paymentMessageExt.getPayAmount() < 1e-6){
+                if(lastAmount - paymentMessageExt.getPayAmount() < 1e-2){
                     TBTradeMessage.remove(orderId);
                 }else{
                     TBTradeMessage.put(orderId, lastAmount - paymentMessageExt.getPayAmount());
@@ -145,7 +145,7 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
                 
                 //update order
                 Double lastAmount = TMTradeMessage.get(orderId);
-                if(lastAmount - paymentMessageExt.getPayAmount() < 1e-6){
+                if(lastAmount - paymentMessageExt.getPayAmount() < 1e-2){
                     TMTradeMessage.remove(orderId);
                 }else{
                     TMTradeMessage.put(orderId, lastAmount - paymentMessageExt.getPayAmount());
@@ -189,8 +189,8 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
     @Override
     public void fail(Object paymentMessageExt) {
         // TODO Auto-generated method stub
-        ++DEBUG_failedTupleCount;
-        resendFailedPaymentMessage((PaymentMessageExt)paymentMessageExt);
+//       ++DEBUG_failedTupleCount;
+//        resendFailedPaymentMessage((PaymentMessageExt)paymentMessageExt);
     }
     
     private void resendFailedPaymentMessage(PaymentMessageExt failedPaymentMessageExt){
@@ -232,15 +232,15 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
             }
         }
         
-        long current = System.currentTimeMillis();
-        if (solvedPayMessageQueue.isEmpty()
-                && unSolvedPayMessageQueue.isEmpty()
-                && _paymentMsgEndSignal.get()
-                && current - _latestMsgArrivedTime.get() > CONSUMER_MAX_WAITING_TIME) {
-//            sendEndSignals();
-            logDebugInfo();
-            JStormUtils.sleepMs(2000);
-        }
+//        long current = System.currentTimeMillis();
+//        if (solvedPayMessageQueue.isEmpty()
+//                && unSolvedPayMessageQueue.isEmpty()
+//                && _paymentMsgEndSignal.get()
+//                && current - _latestMsgArrivedTime.get() > CONSUMER_MAX_WAITING_TIME) {
+////            sendEndSignals();
+//            logDebugInfo();
+//            JStormUtils.sleepMs(2000);
+//        }
         
     }
 
