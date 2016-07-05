@@ -62,13 +62,13 @@ public class RaceTopology {
 //    public static final String WIRELESSSUMCOUNTERBOLT = "WirelessSumBolt";
     
     /** Writer Bolt **/
-    private static final int TMCounterWriterParallelism = 1;
+    private static final int TMCounterWriterParallelism = 2;
     public static final String TMCOUNTERWRITERBOLT = "TMCounterWriter";
     
-    private static final int TBCounterWriterParallelism = 1;
+    private static final int TBCounterWriterParallelism = 2;
     public static final String TBCOUNTERWRITERBOLT = "TBCounterWriter";
     
-    private static final int RationCounterParallelism = 1;
+    private static final int RationCounterParallelism = 4;
     public static final String RATIONWRITERBOLT = "RatioWriter";
     
     
@@ -101,17 +101,17 @@ public class RaceTopology {
         
         /** Writer Bolt **/
         builder.setBolt(TMCOUNTERWRITERBOLT, new TMCounterWriter(), TMCounterWriterParallelism)
- 	   		   .globalGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM)
- 	   		   .globalGrouping(TMMINUTECOUNTERBOLT, TMWIRELESSSTREAM);
+ 	   		   .fieldsGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM, new Fields("key"))
+ 	   		   .fieldsGrouping(TMMINUTECOUNTERBOLT, TMWIRELESSSTREAM, new Fields("key"));
         builder.setBolt(TBCOUNTERWRITERBOLT, new TBCounterWriter(), TBCounterWriterParallelism)
- 	           .globalGrouping(TBMINUTECOUNTERBOLT, TBPCCOUNTERSTREAM)
- 	           .globalGrouping(TBMINUTECOUNTERBOLT, TBWIRELESSSTREAM);
+ 	           .fieldsGrouping(TBMINUTECOUNTERBOLT, TBPCCOUNTERSTREAM, new Fields("key"))
+ 	           .fieldsGrouping(TBMINUTECOUNTERBOLT, TBWIRELESSSTREAM, new Fields("key"));
         
         builder.setBolt(RATIONWRITERBOLT, new RatioWriter(), RationCounterParallelism)
-               .globalGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM)
-               .globalGrouping(TMMINUTECOUNTERBOLT, TMWIRELESSSTREAM)
-               .globalGrouping(TBMINUTECOUNTERBOLT, TBPCCOUNTERSTREAM)
-               .globalGrouping(TBMINUTECOUNTERBOLT, TBWIRELESSSTREAM);
+               .fieldsGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM, new Fields("key"))
+               .fieldsGrouping(TMMINUTECOUNTERBOLT, TMWIRELESSSTREAM, new Fields("key"))
+               .fieldsGrouping(TBMINUTECOUNTERBOLT, TBPCCOUNTERSTREAM, new Fields("key"))
+               .fieldsGrouping(TBMINUTECOUNTERBOLT, TBWIRELESSSTREAM, new Fields("key"));
 
         
         String topologyName = RaceConfig.JstormTopologyName;
