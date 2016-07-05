@@ -1,9 +1,13 @@
 package com.alibaba.middleware.race.bolt;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,8 +16,6 @@ import com.alibaba.middleware.race.Constants;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.Tair.TairOperatorImpl;
 import com.alibaba.middleware.race.jstorm.RaceTopology;
-import com.alibaba.middleware.race.rocketmq.CounterFactory;
-import com.alibaba.middleware.race.rocketmq.CounterFactory.DecoratorTreeMap;
 import com.alibaba.middleware.race.util.DoubleUtil;
 
 import backtype.storm.task.TopologyContext;
@@ -30,8 +32,9 @@ public class RatioWriter implements IBasicBolt {
     private static Logger LOG = LoggerFactory.getLogger(RatioWriter.class);
     private transient TairOperatorImpl tairOperator;
 
-    private DecoratorTreeMap PCSumCounter;
-    private DecoratorTreeMap WirelessSumCounter;
+    private static ConcurrentHashMap<Long, Double> pcSumCounter = new ConcurrentHashMap<Long, Double>();
+    private static ConcurrentHashMap<Long, Double> wirelessSumCounter = new ConcurrentHashMap<Long, Double>();
+    private Map<Long, Double> tairCache;
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer arg0) {
@@ -61,30 +64,46 @@ public class RatioWriter implements IBasicBolt {
         }
 
         if (tuple.getSourceStreamId().equals(RaceTopology.TMPCCOUNTERSTREAM)
-                || tuple.getSourceStreamId().equals(
-                        RaceTopology.TBPCCOUNTERSTREAM)) {
-            PCSumCounter.put(key, PCSumCounter.get(key) + value);
+                || tuple.getSourceStreamId().equals(RaceTopology.TBPCCOUNTERSTREAM)) {
+            Double oldValue = pcSumCounter.get(key);
+            if (oldValue == null) {
+                pcSumCounter.put(key, value);
+            } else {
+                pcSumCounter.put(key, oldValue + value);
+            }
         } else {
-            WirelessSumCounter.put(key, WirelessSumCounter.get(key) + value);
+            Double oldValue = wirelessSumCounter.get(key);
+            if (oldValue == null) {
+                wirelessSumCounter.put(key, value);
+            } else {
+                wirelessSumCounter.put(key, oldValue + value);
+            }
         }
     }
 
-    private void writeTair() {
-        Double pcSum = 0.0;
-        Double wirelessSum = 0.0;
-
-        Iterator<Entry<Long, Double>> iter = PCSumCounter.entrySet().iterator();
+    private synchronized void writeTair(Map<Long, Double> pcSumMap, Map<Long, Double> wirelessSumMap) {
+        List<Long> times = new LinkedList<Long>();
+        Double pcSum = 0.00;
+        Double wirelessSum = 0.00;
+        Iterator<Entry<Long, Double>> iter = pcSumMap.entrySet().iterator();
         while (iter.hasNext()) {
             Entry<Long, Double> entry = iter.next();
-            Long entryKey = entry.getKey();
-
-            pcSum += PCSumCounter.get(entryKey);
-            wirelessSum += WirelessSumCounter.get(entryKey);
-
+            times.add(entry.getKey());
+        }
+        Collections.sort(times);
+        for (Long time : times) {
+            pcSum += pcSumMap.get(time);
+            if (wirelessSumMap.get(time) != null) {
+                wirelessSum += wirelessSumMap.get(time);
+            }
             if (pcSum > 1e-6) {
                 double ratio = wirelessSum / pcSum;
-                tairOperator.write(RaceConfig.prex_ratio + entryKey,
-                        DoubleUtil.roundedTo2Digit(ratio));
+                if (tairCache.get(time) != null && tairCache.get(time) - ratio < 1e-6) {
+                    continue;
+                }
+                if (tairOperator.write(RaceConfig.prex_ratio + time, DoubleUtil.roundedTo2Digit(ratio))) {
+                    tairCache.put(time, ratio);
+                }
             }
         }
     }
@@ -96,8 +115,7 @@ public class RatioWriter implements IBasicBolt {
                 RaceConfig.TairSalveConfigServer, RaceConfig.TairGroup,
                 RaceConfig.TairNamespace);
 
-        PCSumCounter = CounterFactory.createTreeCounter();
-        WirelessSumCounter = CounterFactory.createTreeCounter();
+        tairCache = new HashMap<Long, Double>();
 
         new Thread() {
             @Override
@@ -108,7 +126,7 @@ public class RatioWriter implements IBasicBolt {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    writeTair();
+                    writeTair(pcSumCounter, wirelessSumCounter);
                 }
             }
         }.start();
