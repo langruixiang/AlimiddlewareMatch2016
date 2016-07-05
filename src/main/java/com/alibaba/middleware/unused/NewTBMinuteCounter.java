@@ -1,4 +1,4 @@
-package com.alibaba.middleware.race.bolt;
+package com.alibaba.middleware.unused;
 
 import java.util.Map;
 import java.util.Map.Entry;
@@ -103,16 +103,18 @@ public class NewTBMinuteCounter implements IRichBolt, Runnable{
             if(entry.getValue() - 0 > 1e-2){
                 _collector.emit(RaceTopology.TBPCCOUNTERSTREAM, new Values(entry.getKey(), entry.getValue()));//TODO add anchor
                 LOG.info("TBMinuteCounter Emit PCCounter" + entry.getKey() + " : " + entry.getValue());
+                entry.setValue(0.0);
             }
         }
-        CounterFactory.cleanCounter(PCCounter);
+//        CounterFactory.cleanCounter(PCCounter);
         for(Map.Entry<Long, Double> entry : WirelessCounter.entrySet()){
             if(entry.getValue() - 0 > 1e-2){
                 _collector.emit(RaceTopology.TBWIRELESSSTREAM, new Values(entry.getKey(), entry.getValue()));//TODO add anchor
                 LOG.info("TBMinuteCounter Emit WirelessCounter" + entry.getKey() + " : " + entry.getValue());
+            
             }
         }
-        CounterFactory.cleanCounter(WirelessCounter);
+//        CounterFactory.cleanCounter(WirelessCounter);
 	}
 
     private void sendTuplesIfTimeIsUp() {

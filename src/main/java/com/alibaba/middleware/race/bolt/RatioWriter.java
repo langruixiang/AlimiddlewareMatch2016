@@ -32,8 +32,8 @@ public class RatioWriter implements IBasicBolt {
     private static Logger LOG = LoggerFactory.getLogger(RatioWriter.class);
     private transient TairOperatorImpl tairOperator;
 
-    private static ConcurrentHashMap<Long, Double> pcSumCounter = new ConcurrentHashMap<Long, Double>();
-    private static ConcurrentHashMap<Long, Double> wirelessSumCounter = new ConcurrentHashMap<Long, Double>();
+    private static ConcurrentHashMap<Long, Double> pcSumCounter ;
+    private static ConcurrentHashMap<Long, Double> wirelessSumCounter ;
     private Map<Long, Double> tairCache;
 
     @Override
@@ -115,6 +115,9 @@ public class RatioWriter implements IBasicBolt {
                 RaceConfig.TairSalveConfigServer, RaceConfig.TairGroup,
                 RaceConfig.TairNamespace);
 
+        pcSumCounter = new ConcurrentHashMap<Long, Double>();
+        wirelessSumCounter = new ConcurrentHashMap<Long, Double>();
+        
         tairCache = new HashMap<Long, Double>();
 
         new Thread() {

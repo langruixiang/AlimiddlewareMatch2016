@@ -1,6 +1,7 @@
 package com.alibaba.middleware.race.bolt;
 
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,14 +18,27 @@ import backtype.storm.topology.BasicOutputCollector;
 import backtype.storm.topology.IBasicBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Tuple;
+import io.netty.util.internal.ConcurrentSet;
 
-public class TBCounterWriter implements IBasicBolt{
+public class TBCounterWriter implements IBasicBolt, Runnable{
 	private static final long serialVersionUID = -6569019778720857581L;
 
 	private static Logger LOG = LoggerFactory.getLogger(TBCounterWriter.class);
 
 	private transient TairOperatorImpl tairOperator;
 	private DecoratorHashMap sum;
+	private long WriterInterval = 2000L;
+	
+	private Set<Long> receiveKey;
+	
+	private void writeTBCounter(){
+		for(Long key : receiveKey){
+			tairOperator.write(RaceConfig.prex_taobao + key, DoubleUtil.roundedTo2Digit(sum.get(key)));
+	        LOG.info("TBCounterWriter: " + RaceConfig.prex_taobao + key + " " + sum.get(key));
+		}
+		
+		receiveKey.clear();
+	}
 	
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer arg0) {
@@ -53,9 +67,7 @@ public class TBCounterWriter implements IBasicBolt{
             return;
         }
 	    sum.put(key, sum.get(key) + value);
-        
-        tairOperator.write(RaceConfig.prex_taobao + key, DoubleUtil.roundedTo2Digit(sum.get(key)));
-        LOG.info("TBCounterWriter: " + RaceConfig.prex_taobao + key + " " + sum.get(key));
+	    receiveKey.add(key);
 	}
 
 	@Override
@@ -65,10 +77,26 @@ public class TBCounterWriter implements IBasicBolt{
                 RaceConfig.TairGroup, RaceConfig.TairNamespace);
 		
 		sum = CounterFactory.createHashCounter();
-		
+		receiveKey = new ConcurrentSet<Long>();
+		new Thread(this, "TBCounterWriter").start();
 //		for(Map.Entry<Long, Double> entry : sum.entrySet()){
 //			tairOperator.write(RaceConfig.prex_taobao + entry.getKey(), 0.0);
 //		}
+	}
+
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		while(true){
+			try {
+				Thread.sleep(WriterInterval);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			writeTBCounter();
+		}
 	}
 
 }
