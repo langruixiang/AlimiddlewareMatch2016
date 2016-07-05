@@ -1,4 +1,4 @@
-package com.alibaba.middleware.unused;
+package com.alibaba.middleware.race.spout;
 
 import java.util.List;
 import java.util.Map;
@@ -16,7 +16,6 @@ import com.alibaba.middleware.race.RaceUtils;
 import com.alibaba.middleware.race.jstorm.RaceTopology;
 import com.alibaba.middleware.race.model.OrderMessage;
 import com.alibaba.middleware.race.model.PaymentMessage;
-import com.alibaba.middleware.race.spout.AllSpoutWithMutilThread;
 import com.alibaba.rocketmq.client.consumer.DefaultMQPushConsumer;
 import com.alibaba.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import com.alibaba.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
@@ -144,9 +143,8 @@ public class NewAllSpout implements IRichSpout {
             if(!payMessageQueue.isEmpty()){
                 try {
                     PaymentMessage paymentMessage = payMessageQueue.take();
-                    Values values = new Values(paymentMessage.getOrderId(), paymentMessage.getCreateTime(), paymentMessage.getPayAmount(),
-                    		paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
-                    _collector.emit(RaceTopology.PAYMENTSTREAM, values, new MsgID(RaceTopology.PAYMENTSTREAM, values));
+                    Values values = new Values(paymentMessage.getOrderId(), paymentMessage);
+                    _collector.emit(RaceTopology.PAYMENTSTREAM, values);
                     DEBUG_sendPaymentCount++;
 
                 } catch (InterruptedException e) {
@@ -158,8 +156,8 @@ public class NewAllSpout implements IRichSpout {
             if(!TMTradeMessage.isEmpty()){
             	try {
                     OrderMessage orderMessage = TMTradeMessage.take();
-                    Values values = new Values(orderMessage.getOrderId(), orderMessage.getTotalPrice());
-                    _collector.emit(RaceTopology.TMTRADESTREAM, values, new MsgID(RaceTopology.TMTRADESTREAM, values));
+                    Values values = new Values(orderMessage.getOrderId(), orderMessage);
+                    _collector.emit(RaceTopology.TMTRADESTREAM, values);
                     DEBUG_sendTMTradeeCount++;
 
                 } catch (InterruptedException e) {
@@ -171,8 +169,8 @@ public class NewAllSpout implements IRichSpout {
             if(!TBTradeMessage.isEmpty()){
             	try {
                     OrderMessage orderMessage = TBTradeMessage.take();
-                    Values values = new Values(orderMessage.getOrderId(), orderMessage.getTotalPrice());
-                    _collector.emit(RaceTopology.TBTRADESTREAM, values, new MsgID(RaceTopology.TBTRADESTREAM, values));
+                    Values values = new Values(orderMessage.getOrderId(), orderMessage);
+                    _collector.emit(RaceTopology.TBTRADESTREAM, values);
                     DEBUG_sendTBTradeCount++;
 
                 } catch (InterruptedException e) {
@@ -214,9 +212,9 @@ public class NewAllSpout implements IRichSpout {
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declare) {
 		// TODO Auto-generated method stub
-        declare.declareStream(RaceTopology.PAYMENTSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm", "source"));
-        declare.declareStream(RaceTopology.TMTRADESTREAM, new Fields("orderID", "totalPrice"));
-        declare.declareStream(RaceTopology.TBTRADESTREAM, new Fields("orderID", "totalPrice"));
+        declare.declareStream(RaceTopology.PAYMENTSTREAM, new Fields("orderID", "paymentMessage"));
+        declare.declareStream(RaceTopology.TMTRADESTREAM, new Fields("orderID", "TMTradeMessage"));
+        declare.declareStream(RaceTopology.TBTRADESTREAM, new Fields("orderID", "TBTradeMessage"));
 	}
 
 	@Override

@@ -6,12 +6,12 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.bolt.NewTBMinuteCounter;
 import com.alibaba.middleware.race.bolt.NewTMMinuteCounter;
+import com.alibaba.middleware.race.bolt.PlatformDistinguish;
 import com.alibaba.middleware.race.bolt.RatioWriter;
 import com.alibaba.middleware.race.bolt.TBCounterWriter;
 import com.alibaba.middleware.race.bolt.TMCounterWriter;
 import com.alibaba.middleware.race.spout.AllSpoutWithMutilThread;
-import com.alibaba.middleware.unused.NewAllSpout;
-import com.alibaba.middleware.unused.PlatformDistinguish;
+import com.alibaba.middleware.race.spout.NewAllSpout;
 
 import backtype.storm.Config;
 import backtype.storm.StormSubmitter;
@@ -39,18 +39,18 @@ public class RaceTopology {
     public static final String TBTRADESTREAM = "TBTradeStream";
     
 //    /** Platform Distinguish **/
-//    private static final int PlatformParallelism = 3;
-//    public static final String PLATFORMBOLT = "PlatformBolt";  
+    private static final int PlatformParallelism = 5;
+    public static final String PLATFORMBOLT = "PlatformBolt";  
     public static final String TMPAYSTREAM = "TMPayStream";
     public static final String TBPAYSTREAM = "TBPayStream";
     
     /** Counter Bolt **/      
-    private static final int TMMinuteCounterParallelism = 4;
+    private static final int TMMinuteCounterParallelism = 5;
     public static final String TMMINUTECOUNTERBOLT = "TMMinuteCounterBolt";    
     public static final String TMPCCOUNTERSTREAM = "TMPCCounterStream";
     public static final String TMWIRELESSSTREAM = "TMWirelessStream"; 
     
-    private static final int TBMinuteCounterParallelism = 4;
+    private static final int TBMinuteCounterParallelism = 5;
     public static final String TBMINUTECOUNTERBOLT = "TBMinuteCounterBolt";
     public static final String TBPCCOUNTERSTREAM = "TBPCCounterStream";
     public static final String TBWIRELESSSTREAM = "TBWirelessStream";
@@ -62,13 +62,13 @@ public class RaceTopology {
 //    public static final String WIRELESSSUMCOUNTERBOLT = "WirelessSumBolt";
     
     /** Writer Bolt **/
-    private static final int TMCounterWriterParallelism = 1;
+    private static final int TMCounterWriterParallelism = 2;
     public static final String TMCOUNTERWRITERBOLT = "TMCounterWriter";
     
-    private static final int TBCounterWriterParallelism = 1;
+    private static final int TBCounterWriterParallelism = 2;
     public static final String TBCOUNTERWRITERBOLT = "TBCounterWriter";
     
-    private static final int RationCounterParallelism = 1;
+    private static final int RationCounterParallelism = 4;
     public static final String RATIONWRITERBOLT = "RatioWriter";
     
     
@@ -78,19 +78,19 @@ public class RaceTopology {
         TopologyBuilder builder = new TopologyBuilder();
 
         /** Spout **/        
-        builder.setSpout(ALLSPOUT, new AllSpoutWithMutilThread(), AllSpoutParallelism);
+        builder.setSpout(ALLSPOUT, new NewAllSpout(), AllSpoutParallelism);
         
         /** Platform Bolt **/
-//        builder.setBolt(PLATFORMBOLT, new PlatformDistinguish(), PlatformParallelism)
-//        	   .fieldsGrouping(ALLSPOUT, PAYMENTSTREAM, new Fields("orderID"))
-//        	   .fieldsGrouping(ALLSPOUT, TMTRADESTREAM, new Fields("orderID"))
-//        	   .fieldsGrouping(ALLSPOUT, TBTRADESTREAM, new Fields("orderID"));
+        builder.setBolt(PLATFORMBOLT, new PlatformDistinguish(), PlatformParallelism)
+        	   .fieldsGrouping(ALLSPOUT, PAYMENTSTREAM, new Fields("orderID"))
+        	   .fieldsGrouping(ALLSPOUT, TMTRADESTREAM, new Fields("orderID"))
+        	   .fieldsGrouping(ALLSPOUT, TBTRADESTREAM, new Fields("orderID"));
         
         /** Counter Bolt **/
         builder.setBolt(TMMINUTECOUNTERBOLT, new NewTMMinuteCounter(), TMMinuteCounterParallelism)
-        	   .shuffleGrouping(ALLSPOUT, TMPAYSTREAM);
+        	   .shuffleGrouping(PLATFORMBOLT, TMPAYSTREAM);
         builder.setBolt(TBMINUTECOUNTERBOLT, new NewTBMinuteCounter(), TBMinuteCounterParallelism)
-        	   .shuffleGrouping(ALLSPOUT, TBPAYSTREAM);
+        	   .shuffleGrouping(PLATFORMBOLT, TBPAYSTREAM);
         
 //        builder.setBolt(PCSUMCOUNTERRBOLT, new NewPCSumCounter(), PCSumCounterParallelism)
 //        	   .shuffleGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM)
@@ -101,24 +101,24 @@ public class RaceTopology {
         
         /** Writer Bolt **/
         builder.setBolt(TMCOUNTERWRITERBOLT, new TMCounterWriter(), TMCounterWriterParallelism)
- 	   		   .globalGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM)
- 	   		   .globalGrouping(TMMINUTECOUNTERBOLT, TMWIRELESSSTREAM);
+ 	   		   .fieldsGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM, new Fields("key"))
+ 	   		   .fieldsGrouping(TMMINUTECOUNTERBOLT, TMWIRELESSSTREAM, new Fields("key"));
         builder.setBolt(TBCOUNTERWRITERBOLT, new TBCounterWriter(), TBCounterWriterParallelism)
- 	           .globalGrouping(TBMINUTECOUNTERBOLT, TBPCCOUNTERSTREAM)
- 	           .globalGrouping(TBMINUTECOUNTERBOLT, TBWIRELESSSTREAM);
+ 	           .fieldsGrouping(TBMINUTECOUNTERBOLT, TBPCCOUNTERSTREAM, new Fields("key"))
+ 	           .fieldsGrouping(TBMINUTECOUNTERBOLT, TBWIRELESSSTREAM, new Fields("key"));
         
         builder.setBolt(RATIONWRITERBOLT, new RatioWriter(), RationCounterParallelism)
-               .globalGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM)
-               .globalGrouping(TMMINUTECOUNTERBOLT, TMWIRELESSSTREAM)
-               .globalGrouping(TBMINUTECOUNTERBOLT, TBPCCOUNTERSTREAM)
-               .globalGrouping(TBMINUTECOUNTERBOLT, TBWIRELESSSTREAM);
+               .fieldsGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM, new Fields("key"))
+               .fieldsGrouping(TMMINUTECOUNTERBOLT, TMWIRELESSSTREAM, new Fields("key"))
+               .fieldsGrouping(TBMINUTECOUNTERBOLT, TBPCCOUNTERSTREAM, new Fields("key"))
+               .fieldsGrouping(TBMINUTECOUNTERBOLT, TBWIRELESSSTREAM, new Fields("key"));
 
         
         String topologyName = RaceConfig.JstormTopologyName;
 
         Config conf = new Config();
         conf.setNumWorkers(4);
-        conf.setMessageTimeoutSecs(90);
+//        conf.setMessageTimeoutSecs(90);
         conf.setNumAckers(0);
 //        conf.setMaxSpoutPending(RaceConfig.SpoutMaxPending);
         
