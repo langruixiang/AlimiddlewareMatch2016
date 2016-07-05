@@ -35,7 +35,7 @@ public class NewAllSpout implements IRichSpout {
 
 	private static final long serialVersionUID = -8949381451255846180L;
 	
-	private static Logger LOG = LoggerFactory.getLogger(AllSpoutWithMutilThread.class);
+	private static Logger LOG = LoggerFactory.getLogger(NewAllSpout.class);
 	private SpoutOutputCollector _collector;
 
 	private int _sendNumPerNexttuple = RaceConfig.DEFAULT_SEND_NUMBER_PER_NEXT_TUPLE;
@@ -87,13 +87,13 @@ public class NewAllSpout implements IRichSpout {
                      if(msg.getTopic().equals(RaceConfig.MqPayTopic)){
                          DEBUG_receivedPaymentMsgCount.addAndGet(1);
                          PaymentMessage paymentMessage = RaceUtils.readKryoObject(PaymentMessage.class, body);
-                         payMessageQueue.add(paymentMessage);
+                         payMessageQueue.offer(paymentMessage);
                      }else if(msg.getTopic().equals(RaceConfig.MqTaobaoTradeTopic)){
                          OrderMessage orderMessage = RaceUtils.readKryoObject(OrderMessage.class, body);
-                         TBTradeMessage.add(orderMessage);
+                         TBTradeMessage.offer(orderMessage);
                      }else if(msg.getTopic().equals(RaceConfig.MqTmallTradeTopic)){
                          OrderMessage orderMessage = RaceUtils.readKryoObject(OrderMessage.class, body);
-                         TMTradeMessage.add(orderMessage);
+                         TMTradeMessage.offer(orderMessage);
                      }
                  }
                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
@@ -130,8 +130,8 @@ public class NewAllSpout implements IRichSpout {
 	@Override
 	public void fail(Object m) {
 		// TODO Auto-generated method stub
-//		MsgID msgID = (MsgID)m;
-//		_collector.emit(msgID.streamID, msgID.values);
+		MsgID msgID = (MsgID) m;
+		_collector.emit(msgID.streamID, msgID.values);
 
 	}
 
@@ -139,12 +139,13 @@ public class NewAllSpout implements IRichSpout {
 	public void nextTuple() {
         // TODO Auto-generated method stub
 		
-        for (int i = 0; i < _sendNumPerNexttuple; ++i) {
+//        for (int i = 0; i < _sendNumPerNexttuple; ++i) {
             if(!payMessageQueue.isEmpty()){
                 try {
                     PaymentMessage paymentMessage = payMessageQueue.take();
                     Values values = new Values(paymentMessage.getOrderId(), paymentMessage);
-                    _collector.emit(RaceTopology.PAYMENTSTREAM, values);
+                    _collector.emit(RaceTopology.PAYMENTSTREAM, values, new MsgID(RaceTopology.PAYMENTSTREAM, values));
+                    LOG.info("New AllSpout emit Paymessage" + values);
                     DEBUG_sendPaymentCount++;
 
                 } catch (InterruptedException e) {
@@ -157,7 +158,8 @@ public class NewAllSpout implements IRichSpout {
             	try {
                     OrderMessage orderMessage = TMTradeMessage.take();
                     Values values = new Values(orderMessage.getOrderId(), orderMessage);
-                    _collector.emit(RaceTopology.TMTRADESTREAM, values);
+                    _collector.emit(RaceTopology.TMTRADESTREAM, values, new MsgID(RaceTopology.TMTRADESTREAM, values));
+                    LOG.info("New AllSpout emit TMmessage" + values);
                     DEBUG_sendTMTradeeCount++;
 
                 } catch (InterruptedException e) {
@@ -170,7 +172,8 @@ public class NewAllSpout implements IRichSpout {
             	try {
                     OrderMessage orderMessage = TBTradeMessage.take();
                     Values values = new Values(orderMessage.getOrderId(), orderMessage);
-                    _collector.emit(RaceTopology.TBTRADESTREAM, values);
+                    _collector.emit(RaceTopology.TBTRADESTREAM, values, new MsgID(RaceTopology.TBTRADESTREAM, values));
+                    LOG.info("New AllSpout emit TBmessage" + values);
                     DEBUG_sendTBTradeCount++;
 
                 } catch (InterruptedException e) {
@@ -178,7 +181,7 @@ public class NewAllSpout implements IRichSpout {
                     e.printStackTrace();
                 }
             }
-        }
+//        }
         
         long current = System.currentTimeMillis();
         if (payMessageQueue.isEmpty()
@@ -240,6 +243,5 @@ public class NewAllSpout implements IRichSpout {
 			this.values = values;
 		}
 	}
-
 
 }

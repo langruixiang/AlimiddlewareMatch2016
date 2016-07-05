@@ -27,7 +27,7 @@ import backtype.storm.tuple.Tuple;
 public class RatioWriter implements IBasicBolt {
     private static final long serialVersionUID = -8998720475277834236L;
 
-    private static final long WRITE_TAIR_INTERVAL = 30000;
+    private static final long WRITE_TAIR_INTERVAL = 3000;
 
     private static Logger LOG = LoggerFactory.getLogger(RatioWriter.class);
     private transient TairOperatorImpl tairOperator;

@@ -63,22 +63,19 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
 		if(tuple.getSourceStreamId().equals(RaceTopology.PAYMENTSTREAM)){
 			PaymentMessage paymentMessage = (PaymentMessage) tuple.getValue(1);			
 			PaymentMessageExt orderMessage = new PaymentMessageExt(paymentMessage);
-			solvePaymentMessageExt(orderMessage);	
-			_collector.ack(tuple);
-			
+			solvePaymentMessageExt(orderMessage);				
 		}else if(tuple.getSourceStreamId().equals(RaceTopology.TMTRADESTREAM)){
 			OrderMessage orderMessage = (OrderMessage) tuple.getValue(1);			
 			Long orderID = orderMessage.getOrderId();
 			Double price = orderMessage.getTotalPrice();
 			TMTradeMessage.put(orderID, price);	
-			_collector.ack(tuple);
 		}else if(tuple.getSourceStreamId().equals(RaceTopology.TBTRADESTREAM)){
 			OrderMessage orderMessage = (OrderMessage) tuple.getValue(1);			
 			Long orderID = orderMessage.getOrderId();
 			Double price = orderMessage.getTotalPrice();
-			TBTradeMessage.put(orderID, price);	
-			_collector.ack(tuple);
-		}
+			TBTradeMessage.put(orderID, price);				
+		}		
+		_collector.ack(tuple);
 		
 		for (int i = 0; i < _sendNumPerNexttuple; ++i) {
             if(!solvedPayMessageQueue.isEmpty()){

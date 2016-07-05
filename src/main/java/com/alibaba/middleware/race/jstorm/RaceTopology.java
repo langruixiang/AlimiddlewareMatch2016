@@ -38,19 +38,19 @@ public class RaceTopology {
     public static final String TMTRADESTREAM = "TMTradeStream";
     public static final String TBTRADESTREAM = "TBTradeStream";
     
-//    /** Platform Distinguish **/
-    private static final int PlatformParallelism = 5;
+    /** Platform Distinguish **/
+    private static final int PlatformParallelism = 10;
     public static final String PLATFORMBOLT = "PlatformBolt";  
     public static final String TMPAYSTREAM = "TMPayStream";
     public static final String TBPAYSTREAM = "TBPayStream";
     
     /** Counter Bolt **/      
-    private static final int TMMinuteCounterParallelism = 5;
+    private static final int TMMinuteCounterParallelism = 4;
     public static final String TMMINUTECOUNTERBOLT = "TMMinuteCounterBolt";    
     public static final String TMPCCOUNTERSTREAM = "TMPCCounterStream";
     public static final String TMWIRELESSSTREAM = "TMWirelessStream"; 
     
-    private static final int TBMinuteCounterParallelism = 5;
+    private static final int TBMinuteCounterParallelism = 4;
     public static final String TBMINUTECOUNTERBOLT = "TBMinuteCounterBolt";
     public static final String TBPCCOUNTERSTREAM = "TBPCCounterStream";
     public static final String TBWIRELESSSTREAM = "TBWirelessStream";
@@ -118,8 +118,9 @@ public class RaceTopology {
 
         Config conf = new Config();
         conf.setNumWorkers(4);
-//        conf.setMessageTimeoutSecs(90);
-        conf.setNumAckers(0);
+//        conf.setNumAckers(0);
+        
+      conf.setMessageTimeoutSecs(90);
 //        conf.setMaxSpoutPending(RaceConfig.SpoutMaxPending);
         
         try {

@@ -19,7 +19,7 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
-public class NewTMMinuteCounter implements IRichBolt{
+public class NewTMMinuteCounter implements IRichBolt, Runnable{
 
     private static final long serialVersionUID = -6047434323496591058L;
     private OutputCollector _collector = null;
@@ -39,6 +39,8 @@ public class NewTMMinuteCounter implements IRichBolt{
         this._collector = collector;
         this.PCCounter = CounterFactory.createHashCounter();
         this.WirelessCounter = CounterFactory.createHashCounter();
+        
+        new Thread(this, "NewTMMinuteCounter").start();
     }
 
     @Override
@@ -58,7 +60,8 @@ public class NewTMMinuteCounter implements IRichBolt{
                 WirelessCounter.put(timeStamp, WirelessCounter.get(timeStamp) + payAmount);
             }
         }
-        sendTuplesIfTimeIsUp();
+		
+		_collector.ack(input);
 	}
 
 	@Override
@@ -96,6 +99,18 @@ public class NewTMMinuteCounter implements IRichBolt{
         CounterFactory.cleanCounter(WirelessCounter);
     }
 
+    @Override
+	public void run(){
+		while(true){
+			sendTuplesIfTimeIsUp();
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
 
     private void sendTuplesIfTimeIsUp() {
         if(System.currentTimeMillis() - lastSendTime >= SEND_TUPLES_INTERVAL){
