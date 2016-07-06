@@ -78,8 +78,29 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
                     RaceConfig.MqTmallTradeTopic, 
                     RaceConfig.MqPayTopic,
                     RaceConfig.MqTaobaoTradeTopic);
-            consumer.setPullBatchSize(RaceConfig.MQBatchSize);
-            consumer.start();
+            
+            if(consumer == null){
+            	LOG.info("Consumer already exist consumer in current worker, don't need to fetch data");
+    			new Thread(new Runnable() {
+    				@Override
+    				public void run() {
+    					while (true) {
+    						try {
+    							Thread.sleep(10000);
+    						} catch (InterruptedException e) {
+    							break;
+    						}
+
+    						StringBuilder sb = new StringBuilder();
+    						sb.append("Only one meta consumer can be run on one process,");
+    						sb.append(" but there are mutliple spout consumes with the same consumer, so the second one ");
+    						sb.append(" do nothing ");
+    						LOG.info(sb.toString());
+    					}
+    				}
+    			}).start();
+            }
+            
         } catch (MQClientException e) {
             e.printStackTrace();
             LOG.error("Failed in initConsumer", e);

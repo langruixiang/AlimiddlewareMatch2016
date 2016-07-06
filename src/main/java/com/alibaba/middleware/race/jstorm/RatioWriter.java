@@ -78,7 +78,7 @@ public class RatioWriter implements IRichBolt {
                 if (tairOperator.write(RaceConfig.prex_ratio + time, DoubleUtil.roundedTo2Digit(ratio))) {
                     tairCache.put(time, ratio);
                 }
-                FileUtil.appendLineToFile("/home/admin/result.txt", RaceConfig.prex_ratio + time + " : " + DoubleUtil.roundedTo2Digit(ratio));//TODO remove
+//                FileUtil.appendLineToFile("/home/admin/result.txt", RaceConfig.prex_ratio + time + " : " + DoubleUtil.roundedTo2Digit(ratio));//TODO remove
             }
         }
     }

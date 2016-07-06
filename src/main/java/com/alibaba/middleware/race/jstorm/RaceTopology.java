@@ -24,7 +24,7 @@ import backtype.storm.tuple.Fields;
 public class RaceTopology {
     private static Logger LOG = LoggerFactory.getLogger(RaceTopology.class);
     /** Spout **/
-    private static final int AllSpoutParallelism = 1;
+    private static final int AllSpoutParallelism = 4;
     public static final String ALLSPOUT = "AllSpout";    
     
     /** Platform Distinguish **/
