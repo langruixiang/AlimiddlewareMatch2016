@@ -1,4 +1,4 @@
-package com.alibaba.middleware.race.bolt;
+package com.alibaba.middleware.race.jstorm;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -7,12 +7,12 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.middleware.race.Constants;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.Tair.TairOperatorImpl;
 import com.alibaba.middleware.race.rocketmq.CounterFactory;
 import com.alibaba.middleware.race.rocketmq.CounterFactory.DecoratorHashMap;
 import com.alibaba.middleware.race.util.DoubleUtil;
+import com.alibaba.middleware.race.util.FileUtil;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.BasicOutputCollector;
@@ -28,17 +28,18 @@ public class TMCounterWriter implements IBasicBolt, Runnable{
 	
 	private transient TairOperatorImpl tairOperator;
 	private DecoratorHashMap sum;
-	private Set<Long> receiveSet;
+	private Set<Long> receivedKeySet;
 	
-	private long TMWriterInterval = 2000L;
+	private long TMWriterInterval = 30000L;
 	
 	private void writeTMCounter(){
-		for(Long key : receiveSet){
+		for(Long key : receivedKeySet){
 			tairOperator.write(RaceConfig.prex_tmall + key, DoubleUtil.roundedTo2Digit(sum.get(key)));
 			LOG.info("TMCounterWriter: " + RaceConfig.prex_tmall +  key + " " + sum.get(key));
+			FileUtil.appendLineToFile("/home/admin/result.txt", RaceConfig.prex_tmall + key + " : " + sum.get(key));//TODO remove
 		}
 		
-		receiveSet.clear();
+		receivedKeySet.clear();
 	}
 
 	@Override
@@ -61,14 +62,10 @@ public class TMCounterWriter implements IBasicBolt, Runnable{
 
 	@Override
 	public void execute(Tuple tuple, BasicOutputCollector collector) {
-		Long key = tuple.getLong(0);
-		Double value = tuple.getDouble(1);
-        if (value < Constants.DOUBLE_DIFF_THREHOLD) {
-            return;
-        }
-
-        sum.put(key, sum.get(key) + value);
-        receiveSet.add(key);
+        Long time = tuple.getLong(0);
+        Double amount = tuple.getDouble(1);
+        sum.put(time, sum.get(time) + amount);
+        receivedKeySet.add(time);
 	}
 
 	@Override
@@ -78,7 +75,7 @@ public class TMCounterWriter implements IBasicBolt, Runnable{
                 RaceConfig.TairGroup, RaceConfig.TairNamespace);
 		
 		sum = CounterFactory.createHashCounter();
-		receiveSet = new ConcurrentSet<Long>();
+		receivedKeySet = new ConcurrentSet<Long>();
 		
 		new Thread(this, "TMCounterWriter").start();
 		

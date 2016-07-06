@@ -1,4 +1,4 @@
-package com.alibaba.middleware.race.bolt;
+package com.alibaba.middleware.race.jstorm;
 
 import java.util.Map;
 import java.util.Set;
@@ -12,6 +12,7 @@ import com.alibaba.middleware.race.Tair.TairOperatorImpl;
 import com.alibaba.middleware.race.rocketmq.CounterFactory;
 import com.alibaba.middleware.race.rocketmq.CounterFactory.DecoratorHashMap;
 import com.alibaba.middleware.race.util.DoubleUtil;
+import com.alibaba.middleware.race.util.FileUtil;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.BasicOutputCollector;
@@ -27,17 +28,18 @@ public class TBCounterWriter implements IBasicBolt, Runnable{
 
 	private transient TairOperatorImpl tairOperator;
 	private DecoratorHashMap sum;
-	private long WriterInterval = 2000L;
+	private long WriterInterval = 30000L;
 	
-	private Set<Long> receiveKey;
+	private Set<Long> receivedKeySet;
 	
 	private void writeTBCounter(){
-		for(Long key : receiveKey){
+		for(Long key : receivedKeySet){
 			tairOperator.write(RaceConfig.prex_taobao + key, DoubleUtil.roundedTo2Digit(sum.get(key)));
 	        LOG.info("TBCounterWriter: " + RaceConfig.prex_taobao + key + " " + sum.get(key));
+	        FileUtil.appendLineToFile("/home/admin/result.txt", RaceConfig.prex_taobao + key + " : " + sum.get(key));//TODO remove
 		}
 		
-		receiveKey.clear();
+		receivedKeySet.clear();
 	}
 	
 	@Override
@@ -60,14 +62,10 @@ public class TBCounterWriter implements IBasicBolt, Runnable{
 
 	@Override
 	public void execute(Tuple tuple, BasicOutputCollector collector) {
-		Long key = tuple.getLong(0);
-		Double value = tuple.getDouble(1);
-		
-        if (value < Constants.DOUBLE_DIFF_THREHOLD) {
-            return;
-        }
-	    sum.put(key, sum.get(key) + value);
-	    receiveKey.add(key);
+		Long time = tuple.getLong(0);
+		Double amount = tuple.getDouble(1);
+	    sum.put(time, sum.get(time) + amount);
+	    receivedKeySet.add(time);
 	}
 
 	@Override
@@ -77,7 +75,7 @@ public class TBCounterWriter implements IBasicBolt, Runnable{
                 RaceConfig.TairGroup, RaceConfig.TairNamespace);
 		
 		sum = CounterFactory.createHashCounter();
-		receiveKey = new ConcurrentSet<Long>();
+		receivedKeySet = new ConcurrentSet<Long>();
 		new Thread(this, "TBCounterWriter").start();
 //		for(Map.Entry<Long, Double> entry : sum.entrySet()){
 //			tairOperator.write(RaceConfig.prex_taobao + entry.getKey(), 0.0);

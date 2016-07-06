@@ -4,16 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.middleware.race.RaceConfig;
-import com.alibaba.middleware.race.bolt.PlatformDistinguish;
-import com.alibaba.middleware.race.bolt.RatioWriter;
-import com.alibaba.middleware.race.bolt.TBCounterWriter;
-import com.alibaba.middleware.race.bolt.TBTerminalDistinguish;
-import com.alibaba.middleware.race.bolt.TMCounterWriter;
-import com.alibaba.middleware.race.bolt.TMTerminalDistinguish;
-import com.alibaba.middleware.race.spout.AllSpoutWithMutilThread;
-import com.alibaba.middleware.race.spout.NewAllSpout;
-import com.alibaba.middleware.unused.NewTBMinuteCounter;
-import com.alibaba.middleware.unused.NewTMMinuteCounter;
 
 import backtype.storm.Config;
 import backtype.storm.StormSubmitter;
@@ -36,41 +26,25 @@ public class RaceTopology {
     /** Spout **/
     private static final int AllSpoutParallelism = 1;
     public static final String ALLSPOUT = "AllSpout";    
-    public static final String PAYMENTSTREAM = "PaymentStream";
-    public static final String TMTRADESTREAM = "TMTradeStream";
-    public static final String TBTRADESTREAM = "TBTradeStream";
     
     /** Platform Distinguish **/
-    private static final int PlatformParallelism = 6;
+    private static final int PlatformParallelism = 8;
     public static final String PLATFORMBOLT = "PlatformBolt";  
     public static final String TMPAYSTREAM = "TMPayStream";
     public static final String TBPAYSTREAM = "TBPayStream";
     
-    /** Counter Bolt **/      
-    private static final int TMMinuteCounterParallelism = 3;
-    public static final String TMMINUTECOUNTERBOLT = "TMMinuteCounterBolt";    
-    public static final String TMPCCOUNTERSTREAM = "TMPCCounterStream";
-    public static final String TMWIRELESSSTREAM = "TMWirelessStream"; 
-    
-    private static final int TBMinuteCounterParallelism = 3;
-    public static final String TBMINUTECOUNTERBOLT = "TBMinuteCounterBolt";
-    public static final String TBPCCOUNTERSTREAM = "TBPCCounterStream";
-    public static final String TBWIRELESSSTREAM = "TBWirelessStream";
-    
-//    private static final int PCSumCounterParallelism = 3;
-//    public static final String PCSUMCOUNTERRBOLT = "PCSumWriterBolt";
-    
-//    private static final int WirelessSumCounterParallelism = 3;
-//    public static final String WIRELESSSUMCOUNTERBOLT = "WirelessSumBolt";
+    /** PaymentMessageFilter **/
+    private static final int PaymentMessageFilterParallelism = 4;
+    public static final String PAY_MSG_FILTER_BOLT = "PaymentMessageFilter";
     
     /** Writer Bolt **/
-    private static final int TMCounterWriterParallelism = 3;
+    private static final int TMCounterWriterParallelism = 4;
     public static final String TMCOUNTERWRITERBOLT = "TMCounterWriter";
     
-    private static final int TBCounterWriterParallelism = 3;
+    private static final int TBCounterWriterParallelism = 4;
     public static final String TBCOUNTERWRITERBOLT = "TBCounterWriter";
     
-    private static final int RationCounterParallelism = 3;
+    private static final int RationCounterParallelism = 6;
     public static final String RATIONWRITERBOLT = "RatioWriter";
     
     
@@ -80,42 +54,24 @@ public class RaceTopology {
         TopologyBuilder builder = new TopologyBuilder();
 
         /** Spout **/        
-        builder.setSpout(ALLSPOUT, new NewAllSpout(), AllSpoutParallelism);
+        builder.setSpout(ALLSPOUT, new AllSpout(), AllSpoutParallelism);
         
-        /** Platform Bolt **/
+        /**Bolts receive tuples form spout**/
         builder.setBolt(PLATFORMBOLT, new PlatformDistinguish(), PlatformParallelism)
-        	   .fieldsGrouping(ALLSPOUT, PAYMENTSTREAM, new Fields("orderID"))
-        	   .fieldsGrouping(ALLSPOUT, TMTRADESTREAM, new Fields("orderID"))
-        	   .fieldsGrouping(ALLSPOUT, TBTRADESTREAM, new Fields("orderID"));
-        
-        /** Counter Bolt **/
-        builder.setBolt(TMMINUTECOUNTERBOLT, new TMTerminalDistinguish(), TMMinuteCounterParallelism)
-        	   .shuffleGrouping(PLATFORMBOLT, TMPAYSTREAM);
-        builder.setBolt(TBMINUTECOUNTERBOLT, new TBTerminalDistinguish(), TBMinuteCounterParallelism)
-        	   .shuffleGrouping(PLATFORMBOLT, TBPAYSTREAM);
-        
-//        builder.setBolt(PCSUMCOUNTERRBOLT, new NewPCSumCounter(), PCSumCounterParallelism)
-//        	   .shuffleGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM)
-//        	   .shuffleGrouping(TBMINUTECOUNTERBOLT, TBPCCOUNTERSTREAM);
-//        builder.setBolt(WIRELESSSUMCOUNTERBOLT, new NewWirelessSumCounter(), WirelessSumCounterParallelism)
-//        	   .shuffleGrouping(TMMINUTECOUNTERBOLT, TMWIRELESSSTREAM)
-//        	   .shuffleGrouping(TBMINUTECOUNTERBOLT, TBWIRELESSSTREAM);
-        
-        /** Writer Bolt **/
-        builder.setBolt(TMCOUNTERWRITERBOLT, new TMCounterWriter(), TMCounterWriterParallelism)
- 	   		   .fieldsGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM, new Fields("key"))
- 	   		   .fieldsGrouping(TMMINUTECOUNTERBOLT, TMWIRELESSSTREAM, new Fields("key"));
-        builder.setBolt(TBCOUNTERWRITERBOLT, new TBCounterWriter(), TBCounterWriterParallelism)
- 	           .fieldsGrouping(TBMINUTECOUNTERBOLT, TBPCCOUNTERSTREAM, new Fields("key"))
- 	           .fieldsGrouping(TBMINUTECOUNTERBOLT, TBWIRELESSSTREAM, new Fields("key"));
-        
-        builder.setBolt(RATIONWRITERBOLT, new RatioWriter(), RationCounterParallelism)
-               .fieldsGrouping(TMMINUTECOUNTERBOLT, TMPCCOUNTERSTREAM, new Fields("key"))
-               .fieldsGrouping(TMMINUTECOUNTERBOLT, TMWIRELESSSTREAM, new Fields("key"))
-               .fieldsGrouping(TBMINUTECOUNTERBOLT, TBPCCOUNTERSTREAM, new Fields("key"))
-               .fieldsGrouping(TBMINUTECOUNTERBOLT, TBWIRELESSSTREAM, new Fields("key"));
+               .fieldsGrouping(ALLSPOUT, new Fields("orderID"));
+        builder.setBolt(PAY_MSG_FILTER_BOLT, new PaymentMessageFilter(), PaymentMessageFilterParallelism)
+            .shuffleGrouping(ALLSPOUT);
 
-        
+        /** tm/tb Writer Bolt **/
+        builder.setBolt(TMCOUNTERWRITERBOLT, new TMCounterWriter(), TMCounterWriterParallelism)
+ 	   		   .fieldsGrouping(PLATFORMBOLT, TMPAYSTREAM, new Fields("time"));
+        builder.setBolt(TBCOUNTERWRITERBOLT, new TBCounterWriter(), TBCounterWriterParallelism)
+ 	           .fieldsGrouping(PLATFORMBOLT, TBPAYSTREAM, new Fields("time"));
+
+        /** ratio writer**/
+        builder.setBolt(RATIONWRITERBOLT, new RatioWriter(), RationCounterParallelism)
+               .fieldsGrouping(PAY_MSG_FILTER_BOLT, new Fields("time"));
+
         String topologyName = RaceConfig.JstormTopologyName;
 
         Config conf = new Config();

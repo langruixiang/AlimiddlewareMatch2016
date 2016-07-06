@@ -1,4 +1,4 @@
-package com.alibaba.middleware.race.bolt;
+package com.alibaba.middleware.race.jstorm;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,8 +15,9 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.middleware.race.Constants;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.Tair.TairOperatorImpl;
-import com.alibaba.middleware.race.jstorm.RaceTopology;
+import com.alibaba.middleware.race.model.MetaMessage;
 import com.alibaba.middleware.race.util.DoubleUtil;
+import com.alibaba.middleware.race.util.FileUtil;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -28,7 +29,7 @@ public class RatioWriter implements IRichBolt {
     private static final long serialVersionUID = -8998720475277834236L;
 
     OutputCollector collector;
-    private static final long WRITE_TAIR_INTERVAL = 3000;
+    private static final long WRITE_TAIR_INTERVAL = 30000L;
 
     private static Logger LOG = LoggerFactory.getLogger(RatioWriter.class);
     private transient TairOperatorImpl tairOperator;
@@ -77,6 +78,7 @@ public class RatioWriter implements IRichBolt {
                 if (tairOperator.write(RaceConfig.prex_ratio + time, DoubleUtil.roundedTo2Digit(ratio))) {
                     tairCache.put(time, ratio);
                 }
+                FileUtil.appendLineToFile("/home/admin/result.txt", RaceConfig.prex_ratio + time + " : " + DoubleUtil.roundedTo2Digit(ratio));//TODO remove
             }
         }
     }
@@ -84,30 +86,27 @@ public class RatioWriter implements IRichBolt {
 	@Override
 	public void execute(Tuple tuple) {
 		// TODO Auto-generated method stub
-		Long key = tuple.getLong(0);
-        Double value = tuple.getDouble(1);
-        if (value < Constants.DOUBLE_DIFF_THREHOLD) {
-            return;
-        }
+		Long time = tuple.getLong(0);
+		MetaMessage paymentMessage = (MetaMessage) tuple.getValue(1);
+        Double thisValue = paymentMessage.getPayAmount();
 
-        if (tuple.getSourceStreamId().equals(RaceTopology.TMPCCOUNTERSTREAM)
-                || tuple.getSourceStreamId().equals(RaceTopology.TBPCCOUNTERSTREAM)) {
-            Double oldValue = pcSumCounter.get(key);
+        if (paymentMessage.getPayPlatform() == RaceConfig.PC) {
+            Double oldValue = pcSumCounter.get(time);
             if (oldValue == null) {
-                pcSumCounter.put(key, value);
+                pcSumCounter.put(time, thisValue);
             } else {
-                pcSumCounter.put(key, oldValue + value);
+                pcSumCounter.put(time, oldValue + thisValue);
             }
         } else {
-            Double oldValue = wirelessSumCounter.get(key);
+            Double oldValue = wirelessSumCounter.get(time);
             if (oldValue == null) {
-                wirelessSumCounter.put(key, value);
+                wirelessSumCounter.put(time, thisValue);
             } else {
-                wirelessSumCounter.put(key, oldValue + value);
+                wirelessSumCounter.put(time, oldValue + thisValue);
             }
         }
         
-        collector.ack(tuple);
+//        collector.ack(tuple);//TODO
 	}
 
 	@Override
