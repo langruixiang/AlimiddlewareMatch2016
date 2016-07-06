@@ -139,7 +139,7 @@ public class NewAllSpout implements IRichSpout {
 	public void nextTuple() {
         // TODO Auto-generated method stub
 		
-//        for (int i = 0; i < _sendNumPerNexttuple; ++i) {
+        for (int i = 0; i < _sendNumPerNexttuple; ++i) {
             if(!payMessageQueue.isEmpty()){
                 try {
                     PaymentMessage paymentMessage = payMessageQueue.take();
@@ -181,7 +181,7 @@ public class NewAllSpout implements IRichSpout {
                     e.printStackTrace();
                 }
             }
-//        }
+       }
         
         long current = System.currentTimeMillis();
         if (payMessageQueue.isEmpty()

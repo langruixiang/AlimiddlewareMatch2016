@@ -25,7 +25,6 @@ public class CounterFactory {
 			if(innerMap.containsKey(key)){
 				return innerMap.get(key);
 			}else{
-				LOG.info("Decorator Set Add:" + key);
 				innerMap.put(key, 0.0);
 				return 0.0;
 			}

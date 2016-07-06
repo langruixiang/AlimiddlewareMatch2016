@@ -18,15 +18,16 @@ import com.alibaba.middleware.race.Tair.TairOperatorImpl;
 import com.alibaba.middleware.race.jstorm.RaceTopology;
 import com.alibaba.middleware.race.util.DoubleUtil;
 
+import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.BasicOutputCollector;
-import backtype.storm.topology.IBasicBolt;
+import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Tuple;
 
-public class RatioWriter implements IBasicBolt {
+public class RatioWriter implements IRichBolt {
     private static final long serialVersionUID = -8998720475277834236L;
 
+    OutputCollector collector;
     private static final long WRITE_TAIR_INTERVAL = 3000;
 
     private static Logger LOG = LoggerFactory.getLogger(RatioWriter.class);
@@ -47,38 +48,10 @@ public class RatioWriter implements IBasicBolt {
         // TODO Auto-generated method stub
         return null;
     }
-
     @Override
     public void cleanup() {
         // TODO Auto-generated method stub
 
-    }
-
-    @Override
-    public void execute(Tuple tuple, BasicOutputCollector collector) {
-        // TODO Auto-generated method stub
-        Long key = tuple.getLong(0);
-        Double value = tuple.getDouble(1);
-        if (value < Constants.DOUBLE_DIFF_THREHOLD) {
-            return;
-        }
-
-        if (tuple.getSourceStreamId().equals(RaceTopology.TMPCCOUNTERSTREAM)
-                || tuple.getSourceStreamId().equals(RaceTopology.TBPCCOUNTERSTREAM)) {
-            Double oldValue = pcSumCounter.get(key);
-            if (oldValue == null) {
-                pcSumCounter.put(key, value);
-            } else {
-                pcSumCounter.put(key, oldValue + value);
-            }
-        } else {
-            Double oldValue = wirelessSumCounter.get(key);
-            if (oldValue == null) {
-                wirelessSumCounter.put(key, value);
-            } else {
-                wirelessSumCounter.put(key, oldValue + value);
-            }
-        }
     }
 
     private synchronized void writeTair(Map<Long, Double> pcSumMap, Map<Long, Double> wirelessSumMap) {
@@ -108,10 +81,40 @@ public class RatioWriter implements IBasicBolt {
         }
     }
 
-    @Override
-    public void prepare(Map arg0, TopologyContext arg1) {
-        // TODO Auto-generated method stub
-        tairOperator = new TairOperatorImpl(RaceConfig.TairConfigServer,
+	@Override
+	public void execute(Tuple tuple) {
+		// TODO Auto-generated method stub
+		Long key = tuple.getLong(0);
+        Double value = tuple.getDouble(1);
+        if (value < Constants.DOUBLE_DIFF_THREHOLD) {
+            return;
+        }
+
+        if (tuple.getSourceStreamId().equals(RaceTopology.TMPCCOUNTERSTREAM)
+                || tuple.getSourceStreamId().equals(RaceTopology.TBPCCOUNTERSTREAM)) {
+            Double oldValue = pcSumCounter.get(key);
+            if (oldValue == null) {
+                pcSumCounter.put(key, value);
+            } else {
+                pcSumCounter.put(key, oldValue + value);
+            }
+        } else {
+            Double oldValue = wirelessSumCounter.get(key);
+            if (oldValue == null) {
+                wirelessSumCounter.put(key, value);
+            } else {
+                wirelessSumCounter.put(key, oldValue + value);
+            }
+        }
+        
+        collector.ack(tuple);
+	}
+
+	@Override
+	public void prepare(Map arg0, TopologyContext arg1, OutputCollector collector) {
+		// TODO Auto-generated method stub
+		this.collector = collector;
+		tairOperator = new TairOperatorImpl(RaceConfig.TairConfigServer,
                 RaceConfig.TairSalveConfigServer, RaceConfig.TairGroup,
                 RaceConfig.TairNamespace);
 
@@ -133,6 +136,6 @@ public class RatioWriter implements IBasicBolt {
                 }
             }
         }.start();
-    }
+	}
 
 }
