@@ -29,7 +29,7 @@ public class TBCounterWriter implements IBasicBolt, Runnable{
 
 	private transient TairOperatorImpl tairOperator;
 	private DecoratorHashMap sum;
-	private long WriterInterval = 30000L;
+	private long WriterInterval = 10000L;
 	
 	private ConcurrentSet<Long> receivedKeySet;
 	
@@ -37,8 +37,8 @@ public class TBCounterWriter implements IBasicBolt, Runnable{
 	    synchronized (receivedKeySet) {
 	        for(Long key : receivedKeySet){
     	        tairOperator.write(RaceConfig.prex_taobao + key, DoubleUtil.roundedTo2Digit(sum.get(key)));
-                LOG.info("TBCounterWriter: " + RaceConfig.prex_taobao + key + " " + sum.get(key));
-                FileUtil.appendLineToFile("/home/admin/result.txt", RaceConfig.prex_taobao + key + " : " + sum.get(key));//TODO remove
+//                LOG.info("TBCounterWriter: " + RaceConfig.prex_taobao + key + " " + sum.get(key));
+//                FileUtil.appendLineToFile("/home/admin/result.txt", RaceConfig.prex_taobao + key + " : " + sum.get(key));//TODO remove
 	        }
 	        receivedKeySet.clear();
 	    }

@@ -64,7 +64,7 @@ public class RatioWriter implements IRichBolt {
                 if(pcSum > 1e-6){
                     double ratio = wirelessSum / pcSum;
                     tairOperator.write(RaceConfig.prex_ratio + key, DoubleUtil.roundedTo2Digit(ratio));
-                  FileUtil.appendLineToFile("/home/admin/result.txt", RaceConfig.prex_ratio + key + " : " + DoubleUtil.roundedTo2Digit(ratio));//TODO remove
+//                  FileUtil.appendLineToFile("/home/admin/result.txt", RaceConfig.prex_ratio + key + " : " + DoubleUtil.roundedTo2Digit(ratio));//TODO remove
 //                    LOG.info("Ratio Writer:" + entryKey + ":" + WirelessSumCounter.get(entryKey) / PCSumCounter.get(entryKey));
                 }
             }

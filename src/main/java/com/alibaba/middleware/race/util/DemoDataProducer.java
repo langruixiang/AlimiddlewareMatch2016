@@ -21,7 +21,7 @@ import java.util.concurrent.Semaphore;
 public class DemoDataProducer {
 
     private static Random rand = new Random();
-    private static int count = 200100;
+    private static int count = 100000;
 
     private static DecoratorTreeMap tmCounter = CounterFactory
             .createTreeCounter();

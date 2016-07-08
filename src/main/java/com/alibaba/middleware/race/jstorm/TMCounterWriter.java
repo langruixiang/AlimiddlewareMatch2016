@@ -30,14 +30,14 @@ public class TMCounterWriter implements IBasicBolt, Runnable{
 	private DecoratorHashMap sum;
 	private Set<Long> receivedKeySet;
 	
-	private long TMWriterInterval = 30000L;
+	private long TMWriterInterval = 10000L;
 	
 	private void writeTMCounter(){
 	    synchronized (receivedKeySet) {
 	        for(Long key : receivedKeySet){
 	            tairOperator.write(RaceConfig.prex_tmall + key, DoubleUtil.roundedTo2Digit(sum.get(key)));
-	            LOG.info("TMCounterWriter: " + RaceConfig.prex_tmall +  key + " " + sum.get(key));
-	            FileUtil.appendLineToFile("/home/admin/result.txt", RaceConfig.prex_tmall + key + " : " + sum.get(key));//TODO remove
+//	            LOG.info("TMCounterWriter: " + RaceConfig.prex_tmall +  key + " " + sum.get(key));
+//	            FileUtil.appendLineToFile("/home/admin/result.txt", RaceConfig.prex_tmall + key + " : " + sum.get(key));//TODO remove
 	        }
 	        
 	        receivedKeySet.clear();
