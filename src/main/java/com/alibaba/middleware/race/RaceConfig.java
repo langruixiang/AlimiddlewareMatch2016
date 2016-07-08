@@ -22,6 +22,19 @@ public class RaceConfig implements Serializable {
     public static String TairGroup = "group_tianchi";
     public static Integer TairNamespace = 56862;
     
+/***********Config Value For Local***************/
+//    public static String JstormTopologyName = "race";
+//    
+//    public static String MetaConsumerGroup = "" + System.currentTimeMillis();
+//    public static String MqPayTopic = "MiddlewareRaceTestData_Pay";
+//    public static String MqTmallTradeTopic = "MiddlewareRaceTestData_TMOrder";
+//    public static String MqTaobaoTradeTopic = "MiddlewareRaceTestData_TBOrder";
+//    
+//    public static String TairConfigServer = "192.168.1.105:5198";
+//    public static String TairSalveConfigServer = "";
+//    public static String TairGroup = "group_1";
+//    public static Integer TairNamespace = 1; 
+    
     public static short PC = 0;
     public static short Wireless = 1;
     

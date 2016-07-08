@@ -128,11 +128,14 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
     @Override
     public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
             ConsumeConcurrentlyContext context) {
+    	
         try {
             if (msgs != null && msgs.size() > 0) {
                 _latestMsgArrivedTime.set(System.currentTimeMillis());
                 String topic = context.getMessageQueue().getTopic();
                 for (MessageExt msg : msgs) {
+                	String msgID = msg.getMsgId();
+                	
                     byte[] body = msg.getBody();
                     if (body.length == 2 && body[0] == 0 && body[1] == 0) {
                         if (msg.getTopic().equals(RaceConfig.MqPayTopic)) {
@@ -152,7 +155,7 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
                                 .readKryoObject(PaymentMessage.class, body);
                         if (paymentMessage.getPayAmount() > Constants.ZERO_THREHOLD) {
                             sendingQueue.offer(new MetaMessage(paymentMessage,
-                                    topic));
+                                    topic, msgID));
                         } else {
 //                            if (DEBUG_ENABLE) {
 //                                int tmpCount2 = DEBUG_amountEqualsZeroPaymentMsgCount.addAndGet(1);
@@ -168,7 +171,7 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
                         OrderMessage orderMessage = RaceUtils.readKryoObject(
                                 OrderMessage.class, body);
                         sendingQueue
-                                .offer(new MetaMessage(orderMessage, topic));
+                                .offer(new MetaMessage(orderMessage, topic, msgID));
                     }
                 }
             }

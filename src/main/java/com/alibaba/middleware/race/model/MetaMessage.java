@@ -24,6 +24,8 @@ public class MetaMessage implements Serializable {
     private long createTime; //13位数，毫秒级时间戳，初赛要求的时间都是指该时间
 
     private String topic; //消息种类
+    
+    private String msgID;
 
     public long getOrderId() {
         return orderId;
@@ -43,6 +45,10 @@ public class MetaMessage implements Serializable {
 
     public short getPayPlatform() {
         return payPlatform;
+    }
+    
+    public String getMsgID(){
+    	return this.msgID;
     }
 
     public void setPayPlatform(short payPlatform) {
@@ -69,20 +75,22 @@ public class MetaMessage implements Serializable {
     public MetaMessage() {
     }
 
-    public MetaMessage(PaymentMessage paymentMessage, String topic) {
+    public MetaMessage(PaymentMessage paymentMessage, String topic, String msgID) {
         this.orderId = paymentMessage.getOrderId();
         this.payPlatform = paymentMessage.getPayPlatform();
         this.createTime = paymentMessage.getCreateTime();
         this.payAmount = paymentMessage.getPayAmount();
         this.topic = topic;
+        this.msgID = msgID;
     }
 
-    public MetaMessage(OrderMessage orderMessage, String topic) {
+    public MetaMessage(OrderMessage orderMessage, String topic, String msgID) {
         this.orderId = orderMessage.getOrderId();
         this.payAmount = orderMessage.getTotalPrice();
         this.createTime = orderMessage.getCreateTime();
         this.payPlatform = 2;
         this.topic = topic;
+        this.msgID = msgID;
     }
 
     public MetaMessage(long orderId, double payAmount, short payPlatform, long createTime, String topic) {

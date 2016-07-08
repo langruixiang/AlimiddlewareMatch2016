@@ -29,7 +29,7 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
     private static final long serialVersionUID = -8918483233950498761L;
     private OutputCollector _collector;
     private static final long SEND_INTERVAL = 30000L;
-    private static final HashSet<Double> receivedPayMsgTokenSet = new HashSet<Double>(RaceConfig.MapInitCapacity);
+    private static final HashSet<String> receivedPayMsgTokenSet = new HashSet<String>(RaceConfig.MapInitCapacity);
 
 //    private AtomicLong DEBUG_solveFailedCount = new AtomicLong(0);//TODO
 
@@ -64,7 +64,7 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
     public void execute(Tuple tuple) {
         MetaMessage metaTuple = (MetaMessage) tuple.getValue(1);
         if (RaceConfig.MqPayTopic.equals(metaTuple.getTopic())) {
-            if (receivedPayMsgTokenSet.add(metaTuple.getUniqueMsgToken())) {
+            if (receivedPayMsgTokenSet.add(metaTuple.getMsgID())) {
                 // emit pc or wireless amout
                 Values values = new Values(
                         metaTuple.getCreateTime() / 60000 * 60,
