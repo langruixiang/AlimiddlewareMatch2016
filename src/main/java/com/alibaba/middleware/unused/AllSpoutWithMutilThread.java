@@ -15,7 +15,6 @@ import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.middleware.race.Constants;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.RaceUtils;
-import com.alibaba.middleware.race.jstorm.RaceTopology;
 import com.alibaba.middleware.race.model.PaymentMessageExt;
 import com.alibaba.middleware.race.model.OrderMessage;
 import com.alibaba.middleware.race.model.PaymentMessage;
@@ -201,13 +200,13 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
         Values values = new Values(solvedPaymentMessageExt.getOrderId(), solvedPaymentMessageExt.getCreateTime(), solvedPaymentMessageExt.getPayAmount(),
                 solvedPaymentMessageExt.getPayPlatform());
         if (solvedPaymentMessageExt.isSalerPlatformTB()) {
-            _collector.emit(RaceTopology.TBPAYSTREAM, values);
+            _collector.emit(OldRaceTopology.TBPAYSTREAM, values);
             
             TBLastTime = System.currentTimeMillis();
             
             LOG.info("AllSpout Emit TBPayment" + ":" + solvedPaymentMessageExt.toString());
         } else {
-            _collector.emit(RaceTopology.TMPAYSTREAM, values);
+            _collector.emit(OldRaceTopology.TMPAYSTREAM, values);
             
             TMLastTime = System.currentTimeMillis();
             
@@ -263,8 +262,8 @@ public class AllSpoutWithMutilThread implements IRichSpout, Runnable{
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declare) {
         // TODO Auto-generated method stub
-        declare.declareStream(RaceTopology.TMPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm"));
-        declare.declareStream(RaceTopology.TBPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm"));
+        declare.declareStream(OldRaceTopology.TMPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm"));
+        declare.declareStream(OldRaceTopology.TBPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm"));
     }
 
     @Override

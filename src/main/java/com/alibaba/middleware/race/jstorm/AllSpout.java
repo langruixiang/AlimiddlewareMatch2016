@@ -18,6 +18,7 @@ import com.alibaba.middleware.race.model.MetaMessage;
 import com.alibaba.middleware.race.model.OrderMessage;
 import com.alibaba.middleware.race.model.PaymentMessage;
 import com.alibaba.middleware.race.rocketmq.ConsumerFactory;
+import com.alibaba.middleware.race.util.FileUtil;
 import com.alibaba.rocketmq.client.consumer.DefaultMQPushConsumer;
 import com.alibaba.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import com.alibaba.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
@@ -41,10 +42,12 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
 
 	private int _sendNumPerNexttuple = RaceConfig.DEFAULT_SEND_NUMBER_PER_NEXT_TUPLE;
 
-//    private AtomicInteger DEBUG_receivedPaymentMsgCount = new AtomicInteger(0);//TODO just for debug
-//    private AtomicInteger DEBUG_amountEqualsZeroPaymentMsgCount = new AtomicInteger(0);
-//    private long DEBUG_sendTupleCount = 0;
-//    private long DEBUG_resendCount = 0;
+	private static final boolean DEBUG_ENABLE = true;//TODO just for debug
+    private AtomicInteger DEBUG_receivedMsgCount = new AtomicInteger(0);
+    private AtomicInteger DEBUG_amountEqualsZeroPaymentMsgCount = new AtomicInteger(0);
+    private AtomicInteger DEBUG_sendTupleCount = new AtomicInteger(0);
+    private String DEBUG_thisSpoutName;
+    private long DEBUG_resendCount = 0;
 	
     private AtomicBoolean _paymentMsgEndSignal = new AtomicBoolean(false);//TODO
     private AtomicLong _latestMsgArrivedTime = new AtomicLong(0);
@@ -54,9 +57,13 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
 	
     @Override
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+        if (DEBUG_ENABLE) {
+            DEBUG_thisSpoutName = Thread.currentThread().getName();
+        }
         _collector = collector;
         sendingQueue = new LinkedBlockingQueue<MetaMessage>();
         initConsumer();
+        
     }
 
     @Override
@@ -78,29 +85,13 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
                     RaceConfig.MqTmallTradeTopic, 
                     RaceConfig.MqPayTopic,
                     RaceConfig.MqTaobaoTradeTopic);
-            
-            if(consumer == null){
-            	LOG.info("Consumer already exist consumer in current worker, don't need to fetch data");
-    			new Thread(new Runnable() {
-    				@Override
-    				public void run() {
-    					while (true) {
-    						try {
-    							Thread.sleep(10000);
-    						} catch (InterruptedException e) {
-    							break;
-    						}
-
-    						StringBuilder sb = new StringBuilder();
-    						sb.append("Only one meta consumer can be run on one process,");
-    						sb.append(" but there are mutliple spout consumes with the same consumer, so the second one ");
-    						sb.append(" do nothing ");
-    						LOG.info(sb.toString());
-    					}
-    				}
-    			}).start();
+            if (DEBUG_ENABLE) {
+//              if(consumer == null){
+//                  FileUtil.appendLineToFile("/home/admin/consumer.txt", DEBUG_thisSpoutName + "Consumer already exist consumer in current worker, don't need to fetch data!");
+//              } else {
+//                  FileUtil.appendLineToFile("/home/admin/consumer.txt", DEBUG_thisSpoutName + "create consumer successfully!");
+//              }
             }
-            
         } catch (MQClientException e) {
             e.printStackTrace();
             LOG.error("Failed in initConsumer", e);
@@ -113,7 +104,13 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
         for (int i = 0; i < _sendNumPerNexttuple && !sendingQueue.isEmpty(); ++i) {
             MetaMessage metaTuple = sendingQueue.poll();
             if (metaTuple != null) {
-//                  ++DEBUG_sendTupleCount;
+                if (DEBUG_ENABLE) {
+                  int tmpCount = DEBUG_sendTupleCount.addAndGet(1);
+                  FileUtil.appendLineToFile("/home/admin/send.txt", DEBUG_thisSpoutName + ":DEBUG_sendTupleCount " + tmpCount);
+                  FileUtil.appendLineToFile("/home/admin/detail_tuples.txt", DEBUG_thisSpoutName + " : " + metaTuple.toString());
+                  FileUtil.appendLineToFile("/home/admin/tuples.txt", metaTuple.toString());
+                }
+
             _collector.emit(new Values(metaTuple.getOrderId(), metaTuple));
             }
         }
@@ -146,17 +143,28 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
                     }
 
                     if (RaceConfig.MqPayTopic.equals(topic)) {
-//                        DEBUG_receivedPaymentMsgCount.addAndGet(1);
+                        if (DEBUG_ENABLE) {
+                          int tmpCount = DEBUG_receivedMsgCount.addAndGet(1);
+                          FileUtil.appendLineToFile("/home/admin/receive.txt", DEBUG_thisSpoutName + ":DEBUG_receivedMsgCount " + tmpCount);
+                        }
+
                         PaymentMessage paymentMessage = RaceUtils
                                 .readKryoObject(PaymentMessage.class, body);
                         if (paymentMessage.getPayAmount() > Constants.ZERO_THREHOLD) {
                             sendingQueue.offer(new MetaMessage(paymentMessage,
                                     topic));
                         } else {
-//                            DEBUG_amountEqualsZeroPaymentMsgCount.addAndGet(1);
+                            if (DEBUG_ENABLE) {
+                                int tmpCount2 = DEBUG_amountEqualsZeroPaymentMsgCount.addAndGet(1);
+                                FileUtil.appendLineToFile("/home/admin/zero.txt", DEBUG_thisSpoutName + ":DEBUG_amountEqualsZeroPaymentMsgCount " + tmpCount2);
+                            }
                         }
                     } else if (RaceConfig.MqTmallTradeTopic.equals(topic)
                             || RaceConfig.MqTaobaoTradeTopic.equals(topic)) {
+                        if (DEBUG_ENABLE) {
+                          int tmpCount = DEBUG_receivedMsgCount.addAndGet(1);
+                          FileUtil.appendLineToFile("/home/admin/receive.txt", DEBUG_thisSpoutName + ":DEBUG_receivedMsgCount " + tmpCount);
+                        }
                         OrderMessage orderMessage = RaceUtils.readKryoObject(
                                 OrderMessage.class, body);
                         sendingQueue

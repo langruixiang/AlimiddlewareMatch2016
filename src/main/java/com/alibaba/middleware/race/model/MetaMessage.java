@@ -103,4 +103,19 @@ public class MetaMessage implements Serializable {
                 ", topic='" + topic + '\'' +
                 '}';
     }
+    
+    public double getUniqueMsgToken () {
+        double ret = 0.0;
+        try {
+            ret = Double.parseDouble(
+                    String.valueOf(orderId)
+                    .concat(String.valueOf(payPlatform))
+                    .concat(String.valueOf(createTime % 1000))
+                    .concat(String.valueOf(payAmount)));
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+            ret = orderId + payPlatform + createTime % 1000 + payAmount;
+        }
+        return ret;
+    }
 }

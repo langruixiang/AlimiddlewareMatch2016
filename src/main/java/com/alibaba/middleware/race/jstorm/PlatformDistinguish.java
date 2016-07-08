@@ -1,5 +1,6 @@
 package com.alibaba.middleware.race.jstorm;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -10,6 +11,8 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.model.MetaMessage;
+import com.alibaba.middleware.race.util.FileUtil;
+import com.alibaba.middleware.unused.OldRaceTopology;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -26,6 +29,7 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
     private static final long serialVersionUID = -8918483233950498761L;
     private OutputCollector _collector;
     private static final long SEND_INTERVAL = 30000L;
+    private static final HashSet<Double> receivedPayMsgTokenSet = new HashSet<Double>(RaceConfig.MapInitCapacity);
 
 //    private AtomicLong DEBUG_solveFailedCount = new AtomicLong(0);//TODO
 
@@ -36,10 +40,12 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declareStream(RaceTopology.TBPAYSTREAM, new Fields("time",
+        declarer.declareStream(OldRaceTopology.TBPAYSTREAM, new Fields("time",
                 "amount"));
-        declarer.declareStream(RaceTopology.TMPAYSTREAM, new Fields("time",
+        declarer.declareStream(OldRaceTopology.TMPAYSTREAM, new Fields("time",
                 "amount"));
+        declarer.declareStream(RaceTopology.ALLPAYSTREAM, new Fields("time",
+                "amount", "payPlatform"));
     }
 
     @Override
@@ -58,18 +64,35 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
     public void execute(Tuple tuple) {
         MetaMessage metaTuple = (MetaMessage) tuple.getValue(1);
         if (RaceConfig.MqPayTopic.equals(metaTuple.getTopic())) {
-            if (solvePaymentMessageAndSend(metaTuple)) {
+            if (receivedPayMsgTokenSet.add(metaTuple.getUniqueMsgToken())) {
+                // emit pc or wireless amout
+                Values values = new Values(
+                        metaTuple.getCreateTime() / 60000 * 60,
+                        metaTuple.getPayAmount(),
+                        metaTuple.getPayPlatform());
+                    _collector.emit(RaceTopology.ALLPAYSTREAM, values);
+                    FileUtil.appendLineToFile("/home/admin/ALLPAYSTREAM.txt", metaTuple.toString());
+                if (solvePaymentMessageAndSend(metaTuple)) {
 
+                } else {
+//                    DEBUG_solveFailedCount.addAndGet(1);
+                    _unsolvedPayMessageQueue.offer(metaTuple);
+                }
             } else {
-//                DEBUG_solveFailedCount.addAndGet(1);
-                _unsolvedPayMessageQueue.offer(metaTuple);
+                FileUtil.appendLineToFile("/home/admin/alreadyExist.txt", String.valueOf(metaTuple.getUniqueMsgToken()));
             }
         } else if (RaceConfig.MqTaobaoTradeTopic.equals(metaTuple.getTopic())) {
-            TBTradeMessage
-                    .put(metaTuple.getOrderId(), metaTuple.getPayAmount());
+            if (TBTradeMessage.get(metaTuple.getOrderId()) == null) {
+                TBTradeMessage.put(metaTuple.getOrderId(), metaTuple.getPayAmount());
+            } else {
+                FileUtil.appendLineToFile("/home/admin/alreadyExist.txt", "order");
+            }
         } else {
-            TMTradeMessage
-                    .put(metaTuple.getOrderId(), metaTuple.getPayAmount());
+            if (TMTradeMessage.get(metaTuple.getOrderId()) == null) {
+                TMTradeMessage.put(metaTuple.getOrderId(), metaTuple.getPayAmount());
+            } else {
+                FileUtil.appendLineToFile("/home/admin/alreadyExist.txt", "order");
+            }
         }
         // _collector.ack(tuple);//TODO
     }
@@ -82,9 +105,10 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
             Values values = new Values(
                     paymentMessage.getCreateTime() / 60000 * 60,
                     paymentMessage.getPayAmount());
-            _collector.emit(RaceTopology.TBPAYSTREAM, values);
-            LOG.info("PlatformDistinguish Emit TBPayment" + ":"
-                    + paymentMessage.toString());
+            _collector.emit(OldRaceTopology.TBPAYSTREAM, values);
+            FileUtil.appendLineToFile("/home/admin/TBPAYSTREAM.txt", paymentMessage.toString());
+//            LOG.info("PlatformDistinguish Emit TBPayment" + ":"
+//                    + paymentMessage.toString());
             // update related order info
             Double lastAmount = TBTradeMessage.get(orderId);
             Double thisPayAmount = paymentMessage.getPayAmount();
@@ -99,9 +123,10 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
             Values values = new Values(
                     paymentMessage.getCreateTime() / 60000 * 60,
                     paymentMessage.getPayAmount());
-            _collector.emit(RaceTopology.TMPAYSTREAM, values);
-            LOG.info("PlatformDistinguish Emit TMPayment" + ":"
-                    + paymentMessage.toString());
+            _collector.emit(OldRaceTopology.TMPAYSTREAM, values);
+            FileUtil.appendLineToFile("/home/admin/TMPAYSTREAM.txt", paymentMessage.toString());
+//            LOG.info("PlatformDistinguish Emit TMPayment" + ":"
+//                    + paymentMessage.toString());
             // update related order info
             Double lastAmount = TMTradeMessage.get(orderId);
             Double thisPayAmount = paymentMessage.getPayAmount();

@@ -1,9 +1,13 @@
-package com.alibaba.middleware.race.jstorm;
+package com.alibaba.middleware.unused;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.middleware.race.RaceConfig;
+import com.alibaba.middleware.race.jstorm.AllSpout;
+import com.alibaba.middleware.race.jstorm.PlatformDistinguish;
+import com.alibaba.middleware.race.jstorm.TBCounterWriter;
+import com.alibaba.middleware.race.jstorm.TMCounterWriter;
 
 import backtype.storm.Config;
 import backtype.storm.StormSubmitter;
@@ -21,8 +25,8 @@ import backtype.storm.tuple.Fields;
  * 因为我们后台对选手的git进行下载打包，拓扑运行的入口类默认是com.alibaba.middleware.race.jstorm.RaceTopology；
  * 所以这个主类路径一定要正确
  */
-public class RaceTopology {
-    private static Logger LOG = LoggerFactory.getLogger(RaceTopology.class);
+public class OldRaceTopology {
+    private static Logger LOG = LoggerFactory.getLogger(OldRaceTopology.class);
     /** Spout **/
     private static final int AllSpoutParallelism = 4;
     public static final String ALLSPOUT = "AllSpout";    
@@ -69,7 +73,7 @@ public class RaceTopology {
  	           .fieldsGrouping(PLATFORMBOLT, TBPAYSTREAM, new Fields("time"));
 
         /** ratio writer**/
-        builder.setBolt(RATIONWRITERBOLT, new RatioWriter(), RationCounterParallelism)
+        builder.setBolt(RATIONWRITERBOLT, new OldRatioWriter(), RationCounterParallelism)
                .fieldsGrouping(PAY_MSG_FILTER_BOLT, new Fields("time"));
 
         String topologyName = RaceConfig.JstormTopologyName;

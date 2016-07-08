@@ -1,4 +1,4 @@
-package com.alibaba.middleware.race.jstorm;
+package com.alibaba.middleware.unused;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,13 +25,13 @@ import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Tuple;
 
-public class RatioWriter implements IRichBolt {
+public class OldRatioWriter implements IRichBolt {
     private static final long serialVersionUID = -8998720475277834236L;
 
     OutputCollector collector;
     private static final long WRITE_TAIR_INTERVAL = 30000L;
 
-    private static Logger LOG = LoggerFactory.getLogger(RatioWriter.class);
+    private static Logger LOG = LoggerFactory.getLogger(OldRatioWriter.class);
     private transient TairOperatorImpl tairOperator;
 
     private static ConcurrentHashMap<Long, Double> pcSumCounter ;
@@ -78,7 +78,7 @@ public class RatioWriter implements IRichBolt {
                 if (tairOperator.write(RaceConfig.prex_ratio + time, DoubleUtil.roundedTo2Digit(ratio))) {
                     tairCache.put(time, ratio);
                 }
-//                FileUtil.appendLineToFile("/home/admin/result.txt", RaceConfig.prex_ratio + time + " : " + DoubleUtil.roundedTo2Digit(ratio));//TODO remove
+                FileUtil.appendLineToFile("/home/admin/result.txt", RaceConfig.prex_ratio + time + " : " + DoubleUtil.roundedTo2Digit(ratio));//TODO remove
             }
         }
     }

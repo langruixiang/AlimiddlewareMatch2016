@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.RaceUtils;
 import com.alibaba.middleware.race.Tair.TairOperatorImpl;
-import com.alibaba.middleware.race.jstorm.RaceTopology;
 import com.alibaba.middleware.race.model.OrderMessage;
 import com.alibaba.middleware.race.model.PaymentMessage;
 import com.alibaba.middleware.race.rocketmq.CounterFactory;
@@ -142,7 +141,7 @@ public class AllSpoutTair implements IRichSpout{
 		if(TMTradeMessage.containsKey(orderID)){
 			Values values = new Values(paymentMessage.getOrderId(), paymentMessage.getCreateTime(), paymentMessage.getPayAmount(),
 					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
-			_collector.emit(RaceTopology.TMPAYSTREAM, values, paymentMessage);
+			_collector.emit(OldRaceTopology.TMPAYSTREAM, values, paymentMessage);
 			
 			lastTime = System.currentTimeMillis();
 			
@@ -159,7 +158,7 @@ public class AllSpoutTair implements IRichSpout{
 		}else if(TBTradeMessage.containsKey(orderID)){
 			Values values = new Values(paymentMessage.getOrderId(), paymentMessage.getCreateTime(), paymentMessage.getPayAmount(),
 					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
-			_collector.emit(RaceTopology.TBPAYSTREAM, values, paymentMessage);
+			_collector.emit(OldRaceTopology.TBPAYSTREAM, values, paymentMessage);
 			
 			lastTime = System.currentTimeMillis();			
 			Double lastAmount = TBTradeMessage.get(orderID);
@@ -186,7 +185,7 @@ public class AllSpoutTair implements IRichSpout{
 		if(v != null && v.equals("TM")){
 			Values values = new Values(paymentMessage.getOrderId(), paymentMessage.getCreateTime(), paymentMessage.getPayAmount(),
 					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
-			_collector.emit(RaceTopology.TMPAYSTREAM, values, paymentMessage);
+			_collector.emit(OldRaceTopology.TMPAYSTREAM, values, paymentMessage);
 			
 			lastTime = System.currentTimeMillis();
 			LOG.info("AllSpout Emit TMPayment" + paymentCounter + ":" + paymentMessage.toString());
@@ -194,7 +193,7 @@ public class AllSpoutTair implements IRichSpout{
 		}else if(v != null && v.equals("TB")){
 			Values values = new Values(paymentMessage.getOrderId(), paymentMessage.getCreateTime(), paymentMessage.getPayAmount(),
 					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
-			_collector.emit(RaceTopology.TBPAYSTREAM, values, paymentMessage);
+			_collector.emit(OldRaceTopology.TBPAYSTREAM, values, paymentMessage);
 			LOG.info("AllSpout Emit TBPayment" + paymentCounter + ":" + paymentMessage.toString());
 			return true;
 		}else{
@@ -212,7 +211,7 @@ public class AllSpoutTair implements IRichSpout{
 					((String)tairOperator.get(orderID)).equals("TM")){
 			Values values = new Values(paymentMessage.getOrderId(), paymentMessage.getCreateTime(), paymentMessage.getPayAmount(),
 					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
-			_collector.emit(RaceTopology.TMPAYSTREAM, values, paymentMessage);
+			_collector.emit(OldRaceTopology.TMPAYSTREAM, values, paymentMessage);
 			
 			lastTime = System.currentTimeMillis();			
 			LOG.info("AllSpout Emit TMPayment" + paymentCounter + ":" + paymentMessage.toString());
@@ -221,7 +220,7 @@ public class AllSpoutTair implements IRichSpout{
 						((String)tairOperator.get(orderID)).equals("TB") ){
 			Values values = new Values(paymentMessage.getOrderId(), paymentMessage.getCreateTime(), paymentMessage.getPayAmount(),
 					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
-			_collector.emit(RaceTopology.TBPAYSTREAM, values, paymentMessage);
+			_collector.emit(OldRaceTopology.TBPAYSTREAM, values, paymentMessage);
 			
 			lastTime = System.currentTimeMillis();			
 			LOG.info("AllSpout Emit TBPayment" + paymentCounter + ":" + paymentMessage.toString());
@@ -328,8 +327,8 @@ public class AllSpoutTair implements IRichSpout{
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declare) {
 		// TODO Auto-generated method stub
-		declare.declareStream(RaceTopology.TMPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm", "source"));
-		declare.declareStream(RaceTopology.TBPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm", "source"));
+		declare.declareStream(OldRaceTopology.TMPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm", "source"));
+		declare.declareStream(OldRaceTopology.TBPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm", "source"));
 	}
 
 	@Override

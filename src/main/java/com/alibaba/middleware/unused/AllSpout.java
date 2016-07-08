@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.RaceUtils;
-import com.alibaba.middleware.race.jstorm.RaceTopology;
 import com.alibaba.middleware.race.model.OrderMessage;
 import com.alibaba.middleware.race.model.PaymentMessage;
 import com.alibaba.middleware.race.rocketmq.CounterFactory;
@@ -160,7 +159,7 @@ public class AllSpout implements IRichSpout{
 		if(TMTradeMessage.containsKey(orderID)){
 			Values values = new Values(paymentMessage.getOrderId(), paymentMessage.getCreateTime(), paymentMessage.getPayAmount(),
 					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
-			_collector.emit(RaceTopology.TMPAYSTREAM, values, paymentMessage);
+			_collector.emit(OldRaceTopology.TMPAYSTREAM, values, paymentMessage);
 			
 			TMLastTime = System.currentTimeMillis();
 			
@@ -176,7 +175,7 @@ public class AllSpout implements IRichSpout{
 		}else if(TBTradeMessage.containsKey(orderID)){
 			Values values = new Values(paymentMessage.getOrderId(), paymentMessage.getCreateTime(), paymentMessage.getPayAmount(),
 					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
-			_collector.emit(RaceTopology.TBPAYSTREAM, values, paymentMessage);
+			_collector.emit(OldRaceTopology.TBPAYSTREAM, values, paymentMessage);
 			
 			TBLastTime = System.currentTimeMillis();			
 			Double lastAmount = TBTradeMessage.get(orderID);
@@ -198,14 +197,14 @@ public class AllSpout implements IRichSpout{
 		if(TMTradeMessage.containsKey(orderID) || completeTMTrade.containsKey(orderID)){
 			Values values = new Values(paymentMessage.getOrderId(), paymentMessage.getCreateTime(), paymentMessage.getPayAmount(),
 					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
-			_collector.emit(RaceTopology.TMPAYSTREAM, values, paymentMessage);
+			_collector.emit(OldRaceTopology.TMPAYSTREAM, values, paymentMessage);
 			
 			TMLastTime = System.currentTimeMillis();			
 			LOG.info("AllSpout Emit TMPayment" + paymentCounter + ":" + paymentMessage.toString());
 		}else if(TBTradeMessage.containsKey(orderID) || completeTBTrade.containsKey(orderID)){
 			Values values = new Values(paymentMessage.getOrderId(), paymentMessage.getCreateTime(), paymentMessage.getPayAmount(),
 					paymentMessage.getPayPlatform(), paymentMessage.getPaySource());
-			_collector.emit(RaceTopology.TBPAYSTREAM, values, paymentMessage);
+			_collector.emit(OldRaceTopology.TBPAYSTREAM, values, paymentMessage);
 			
 			TBLastTime = System.currentTimeMillis();			
 			LOG.info("AllSpout Emit TBPayment" + paymentCounter + ":" + paymentMessage.toString());
@@ -320,8 +319,8 @@ public class AllSpout implements IRichSpout{
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declare) {
 		// TODO Auto-generated method stub
-		declare.declareStream(RaceTopology.TMPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm", "source"));
-		declare.declareStream(RaceTopology.TBPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm", "source"));
+		declare.declareStream(OldRaceTopology.TMPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm", "source"));
+		declare.declareStream(OldRaceTopology.TBPAYSTREAM, new Fields("orderID", "createTime", "payAmount", "platForm", "source"));
 	}
 
 	@Override
