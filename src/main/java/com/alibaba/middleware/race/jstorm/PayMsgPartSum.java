@@ -10,6 +10,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.middleware.race.Constants;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.model.MetaMessage;
 import com.alibaba.middleware.race.rocketmq.CounterFactory;
@@ -40,7 +41,7 @@ public class PayMsgPartSum implements IRichBolt {
 	       Long time = tuple.getLong(0);
 	       Double amount = tuple.getDouble(1);
 	       Short payPlatform = tuple.getShort(2);
-	       if (RaceConfig.PC == payPlatform) {
+	       if (Constants.PC == payPlatform) {
 	           synchronized (pcSumCounter) {
 	               pcSumCounter.put(time, pcSumCounter.get(time) + amount);
 	           }
@@ -81,7 +82,7 @@ public class PayMsgPartSum implements IRichBolt {
         synchronized (pcSumCounter) {
             for (Map.Entry<Long, Double> entry : pcSumCounter.entrySet()) {
                 if (entry.getValue() - 0 > 1e-6) {
-                    _collector.emit(new Values(entry.getKey(), entry.getValue(), RaceConfig.PC));
+                    _collector.emit(new Values(entry.getKey(), entry.getValue(), Constants.PC));
                 }
             }
             CounterFactory.cleanCounter(pcSumCounter);
@@ -90,7 +91,7 @@ public class PayMsgPartSum implements IRichBolt {
         synchronized (wirelessSumCounter) {
             for (Map.Entry<Long, Double> entry : wirelessSumCounter.entrySet()) {
                 if (entry.getValue() - 0 > 1e-6) {
-                    _collector.emit(new Values(entry.getKey(), entry.getValue(), RaceConfig.Wireless));
+                    _collector.emit(new Values(entry.getKey(), entry.getValue(), Constants.Wireless));
                 }
             }
             CounterFactory.cleanCounter(wirelessSumCounter);

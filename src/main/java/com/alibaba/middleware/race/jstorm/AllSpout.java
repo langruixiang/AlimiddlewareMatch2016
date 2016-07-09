@@ -40,9 +40,9 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
 	private static Logger LOG = LoggerFactory.getLogger(AllSpout.class);
 	private SpoutOutputCollector _collector;
 
-	private int _sendNumPerNexttuple = RaceConfig.DEFAULT_SEND_NUMBER_PER_NEXT_TUPLE;
+	private int _sendNumPerNexttuple = Constants.DEFAULT_SEND_NUMBER_PER_NEXT_TUPLE;
 
-//	private static final boolean DEBUG_ENABLE = true;//TODO just for debug
+//    private static final boolean DEBUG_ENABLE = true;//TODO just for debug
 //    private AtomicInteger DEBUG_receivedMsgCount = new AtomicInteger(0);
 //    private AtomicInteger DEBUG_amountEqualsZeroPaymentMsgCount = new AtomicInteger(0);
 //    private AtomicInteger DEBUG_sendTupleCount = new AtomicInteger(0);

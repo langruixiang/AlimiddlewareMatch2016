@@ -10,9 +10,9 @@ package com.alibaba.middleware.race;
  *
  */
 public class Constants {
-    public static final String HOME_PATH = "Z:/AliProject/AliMiddlewareSolution/tmpfile/";
+//    public static final String HOME_PATH = "Z:/AliProject/AliMiddlewareSolution/tmpfile/";
 
-//    public static final String HOME_PATH = "/home/clayandwind/";
+    public static final String HOME_PATH = "/home/clayandwind/";
     
     public static final String EXPECTED_RESULT_FILE = HOME_PATH + "expectedResult.txt";
     
@@ -25,4 +25,15 @@ public class Constants {
     public static final short TAOBAO = 0;
 
     public static final short TMALL = 1;
+    
+    
+    public static final short PC = 0;
+    public static final short Wireless = 1;
+    
+    public static int MapInitCapacity = 50000;
+    public static int tradeQueuesize = 10;
+    
+    public static int MQBatchSize = 1000;
+    
+    public static int DEFAULT_SEND_NUMBER_PER_NEXT_TUPLE = 2000;
 }

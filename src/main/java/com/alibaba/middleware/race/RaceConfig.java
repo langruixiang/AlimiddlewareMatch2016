@@ -34,20 +34,4 @@ public class RaceConfig implements Serializable {
 //    public static String TairSalveConfigServer = "";
 //    public static String TairGroup = "group_1";
 //    public static Integer TairNamespace = 1; 
-    
-    public static short PC = 0;
-    public static short Wireless = 1;
-    
-    public static Long specialTBOrderID = -1L;
-    public static Long specialTMOrderID = -2L;
-    
-    public static long MinuteBoltInterval = 2000L;
-    public static long SumBoltInterval = 2000L;
-    
-    public static int MapInitCapacity = 50000;    
-    public static int tradeQueuesize = 10;
-    
-    public static int MQBatchSize = 1000;
-    
-    public static final int DEFAULT_SEND_NUMBER_PER_NEXT_TUPLE = 2000;
 }

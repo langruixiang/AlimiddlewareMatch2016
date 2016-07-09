@@ -100,7 +100,7 @@ public class DemoDataProducer {
                         });
 
                         Long key = paymentMessage.getCreateTime() / 1000 / 60 * 60;
-                        if (paymentMessage.getPayPlatform() == RaceConfig.PC) {
+                        if (paymentMessage.getPayPlatform() == Constants.PC) {
                             PCCounter.put(key, PCCounter.get(key)
                                     + paymentMessage.getPayAmount());
                         } else {

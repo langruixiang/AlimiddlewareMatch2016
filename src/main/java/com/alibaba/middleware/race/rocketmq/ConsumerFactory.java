@@ -3,6 +3,7 @@ package com.alibaba.middleware.race.rocketmq;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.middleware.race.Constants;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.rocketmq.client.consumer.DefaultMQPushConsumer;
 import com.alibaba.rocketmq.client.consumer.listener.MessageListenerConcurrently;
@@ -35,7 +36,7 @@ public class ConsumerFactory {
             consumer.subscribe(topic, "*");
         }
         consumer.registerMessageListener(listener);
-        consumer.setPullBatchSize(RaceConfig.MQBatchSize);
+        consumer.setPullBatchSize(Constants.MQBatchSize);
         
         consumer.start();
         return consumer;

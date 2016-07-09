@@ -84,7 +84,7 @@ public class RatioWriter implements IRichBolt {
         
         synchronized (receivedKeySet) {
             receivedKeySet.add(time);
-            if (payPlatform == RaceConfig.PC) {
+            if (payPlatform == Constants.PC) {
                 PCSumCounter.put(time, PCSumCounter.get(time) + amount);
             } else {
                 WirelessSumCounter.put(time, WirelessSumCounter.get(time) + amount);

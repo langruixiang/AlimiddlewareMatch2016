@@ -1,6 +1,7 @@
 
 package com.alibaba.middleware.race.rocketmq;
 
+import com.alibaba.middleware.race.Constants;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.rocketmq.client.exception.MQClientException;
 import com.alibaba.rocketmq.client.producer.DefaultMQProducer;
@@ -85,7 +86,7 @@ public class Producer {
                         });
                         
                         Long key = paymentMessage.getCreateTime() / 1000 / 60 * 60;
-                        if(paymentMessage.getPayPlatform() == RaceConfig.PC){                        	
+                        if(paymentMessage.getPayPlatform() == Constants.PC){                        	
                         	PCCounter.put(key, PCCounter.get(key) + paymentMessage.getPayAmount());
                         }else{
                         	WirelessCounter.put(key, WirelessCounter.get(key) + paymentMessage.getPayAmount());
