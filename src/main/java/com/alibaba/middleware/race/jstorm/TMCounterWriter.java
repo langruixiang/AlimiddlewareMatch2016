@@ -36,7 +36,10 @@ public class TMCounterWriter implements IBasicBolt, Runnable{
 	        for(Long key : receivedKeySet){
 	            tairOperator.write(RaceConfig.prex_tmall + key, DoubleUtil.roundedTo2Digit(sum.get(key)));
 //	            LOG.info("TMCounterWriter: " + RaceConfig.prex_tmall +  key + " " + sum.get(key));
+//	            FileUtil.appendLineToFile(Constants.DEBUG_FILES_OUTPUT_DIR + "DEBUG_topologyStartTime.txt", RaceConfig.prex_tmall + key + " : " + AllSpout.DEBUG_spoutStartTime);//TODO remove
+//	            FileUtil.appendLineToFile(Constants.DEBUG_FILES_OUTPUT_DIR + "tmTimeMap.txt", RaceConfig.prex_tmall + key + " : " + (System.currentTimeMillis() - AllSpout.DEBUG_spoutStartTime));//TODO remove
 //	            FileUtil.appendLineToFile("/home/admin/result.txt", RaceConfig.prex_tmall + key + " : " + sum.get(key));//TODO remove
+	            
 	        }
 	        
 	        receivedKeySet.clear();

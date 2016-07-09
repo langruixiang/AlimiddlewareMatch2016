@@ -3,7 +3,9 @@ package com.alibaba.middleware.race.jstorm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.middleware.race.Constants;
 import com.alibaba.middleware.race.RaceConfig;
+import com.alibaba.middleware.race.util.FileUtil;
 
 import backtype.storm.Config;
 import backtype.storm.StormSubmitter;
@@ -47,7 +49,7 @@ public class RaceTopology {
 
     private static final int RatioWriterParallelism = 1;
     public static final String RATIOWRITERBOLT = "RatioWriter";
-
+    
     public static void main(String[] args) {
 
         TopologyBuilder builder = new TopologyBuilder();
@@ -72,7 +74,7 @@ public class RaceTopology {
         builder.setBolt(PAY_MSG_PART_SUM_BOLT, new PayMsgPartSum(),
                 PayMsgPartSumParallelism).fieldsGrouping(PLATFORMBOLT,
                 ALLPAYSTREAM, new Fields("time"));
-        builder.setBolt(RATIOWRITERBOLT, new RatioWriter(),
+        builder.setBolt(RATIOWRITERBOLT, new NewRatioWriter(),
                 RatioWriterParallelism).globalGrouping(PAY_MSG_PART_SUM_BOLT);
 
         String topologyName = RaceConfig.JstormTopologyName;

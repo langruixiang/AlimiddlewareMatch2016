@@ -14,11 +14,12 @@ public class CorrectRateCalculator {
 	private static TairOperatorImpl tairOperator = new TairOperatorImpl(RaceConfig.TairConfigServer, RaceConfig.TairSalveConfigServer,
           RaceConfig.TairGroup, RaceConfig.TairNamespace);
 	
-    private static final double DIFF_THREHOLD = 1e-2;
+    private static final double DIFF_THREHOLD = 1e-3;
 
     private static final Logger LOG = LoggerFactory.getLogger(CorrectRateCalculator.class);
 
     public static void main(String [] args) throws Exception {
+        FileUtil.deleteFileIfExist(Constants.ERROR_RESULT_FILE);
         if (!FileUtil.isFileExist(Constants.EXPECTED_RESULT_FILE)) {
             LOG.error(Constants.EXPECTED_RESULT_FILE + " doesn't exist!");
             return;
@@ -55,6 +56,9 @@ public class CorrectRateCalculator {
         	}
             if(Math.abs(entry.getValue() - actualValue) < DIFF_THREHOLD) {
                 ++correctCnt;
+            } else {
+                FileUtil.appendLineToFile(Constants.ERROR_RESULT_FILE, String.format(entry.getKey() + " == expected:%f actual:%f", entry.getValue(), actualValue));
+//                LOG.info("expected:{} actual:{}", entry.getValue(), actualValue);
             }
         }
         System.out.println("correctCnt : " + correctCnt);

@@ -7,10 +7,11 @@ import java.util.List;
 import java.util.Map;
 
 import com.alibaba.middleware.race.util.DoubleUtil;
+import com.alibaba.middleware.race.util.TimeUtil;
 
 public class MixedTest {
     public static void main(String[] args) {
-        testDoubleUtil();
+        testTimeUtil();
     }
 
     private static void testDoubleFormat() {
@@ -45,5 +46,11 @@ public class MixedTest {
         System.out.println(DoubleUtil.roundedTo2Digit(d));
         double d2 = 1.555111;
         System.out.println(DoubleUtil.roundedTo2Digit(d2));
+    }
+    
+    private static void testTimeUtil () {
+        for (int i =0; i < 1000; ++i) {
+            System.out.println(TimeUtil.getRandomTimeMillisInOneDay());
+        }
     }
 }

@@ -37,6 +37,8 @@ public class TBCounterWriter implements IBasicBolt, Runnable{
 	        for(Long key : receivedKeySet){
     	        tairOperator.write(RaceConfig.prex_taobao + key, DoubleUtil.roundedTo2Digit(sum.get(key)));
 //                LOG.info("TBCounterWriter: " + RaceConfig.prex_taobao + key + " " + sum.get(key));
+//    	        FileUtil.appendLineToFile(Constants.DEBUG_FILES_OUTPUT_DIR + "DEBUG_topologyStartTime.txt", RaceConfig.prex_taobao + key + " : " + AllSpout.DEBUG_spoutStartTime);//TODO remove
+//    	        FileUtil.appendLineToFile(Constants.DEBUG_FILES_OUTPUT_DIR + "tbTimeMap.txt", RaceConfig.prex_taobao + key + " : " + (System.currentTimeMillis() - AllSpout.DEBUG_spoutStartTime));//TODO remove
 //                FileUtil.appendLineToFile("/home/admin/result.txt", RaceConfig.prex_taobao + key + " : " + sum.get(key));//TODO remove
 	        }
 	        receivedKeySet.clear();

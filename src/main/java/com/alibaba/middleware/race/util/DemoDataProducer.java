@@ -21,7 +21,7 @@ import java.util.concurrent.Semaphore;
 public class DemoDataProducer {
 
     private static Random rand = new Random();
-    private static int count = 100000;
+    private static int count = 200000;
 
     private static DecoratorTreeMap tmCounter = CounterFactory
             .createTreeCounter();
@@ -37,7 +37,7 @@ public class DemoDataProducer {
 
     public static void main(String[] args) throws MQClientException,
             InterruptedException {
-        FileUtil.deleteFileIfExist(Constants.EXPECTED_RESULT_FILE);
+        removeDebugFiles();
         DefaultMQProducer producer = new DefaultMQProducer(
                 RaceConfig.MetaConsumerGroup + "producer");
 
@@ -57,7 +57,7 @@ public class DemoDataProducer {
                 final OrderMessage orderMessage = (platform == 0 ? OrderMessage
                         .createTbaoMessage() : OrderMessage
                         .createTmallMessage());
-                orderMessage.setCreateTime(System.currentTimeMillis());
+                orderMessage.setCreateTime(TimeUtil.getRandomTimeMillisInOneDay());
 
                 byte[] body = RaceUtils.writeKryoObject(orderMessage);
 
@@ -66,6 +66,7 @@ public class DemoDataProducer {
                 producer.send(msgToBroker, new SendCallback() {
                     public void onSuccess(SendResult sendResult) {
                         System.out.println(orderMessage);
+                        recordOrderMessage(orderMessage);
                         semaphore.release();
                     }
 
@@ -92,6 +93,7 @@ public class DemoDataProducer {
                         producer.send(messageToBroker, new SendCallback() {
                             public void onSuccess(SendResult sendResult) {
                                 System.out.println(paymentMessage);
+                                recordPaymentMessage(paymentMessage);
                             }
 
                             public void onException(Throwable throwable) {
@@ -166,12 +168,13 @@ public class DemoDataProducer {
             Long key = entry.getKey();
             pcSum += entry.getValue();
             wirelessSum += WirelessCounter.get(key);
-            double ratio = 0.0;
-            if (pcSum.compareTo(0.0) != 0) {
-                ratio = wirelessSum / pcSum;
-            }
-            if (ratio > 0.0) {
-                outputExpectedResult(RaceConfig.prex_ratio + entry.getKey(), DoubleUtil.roundedTo2Digit(ratio));
+            if(pcSum > Constants.ZERO_THREHOLD){
+                double ratio = wirelessSum / pcSum;
+                double shortRatio = DoubleUtil.roundedTo2Digit(ratio);
+                if (shortRatio > 0.0) {
+                    outputExpectedResult(RaceConfig.prex_ratio + entry.getKey(), shortRatio);
+//                    LOG.info("Ratio Writer:" + entryKey + ":" + shortRatio);
+                }
             }
         }
         System.out.println("paymentCounter:" + paymentCounter);
@@ -182,4 +185,17 @@ public class DemoDataProducer {
 //      System.out.println(key + ":" + value);
       FileUtil.appendLineToFile(Constants.EXPECTED_RESULT_FILE, key + ":" + value);
   }
+    
+    private static void recordPaymentMessage(PaymentMessage msg) {
+      FileUtil.appendLineToFile(Constants.HOME_PATH + "sendOrderMsgs.txt", msg.toString());
+  }
+    
+    private static void recordOrderMessage(OrderMessage msg) {
+        FileUtil.appendLineToFile(Constants.HOME_PATH + "sendPaymentMsgs.txt", msg.toString());
+  }
+    private static void removeDebugFiles() {
+        FileUtil.deleteFileIfExist(Constants.EXPECTED_RESULT_FILE);
+        FileUtil.deleteFileIfExist(Constants.HOME_PATH + "sendOrderMsgs.txt");
+        FileUtil.deleteFileIfExist(Constants.HOME_PATH + "sendPaymentMsgs.txt");
+    }
 }

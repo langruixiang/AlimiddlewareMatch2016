@@ -167,7 +167,7 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
         while (true) {
             if (_unsolvedPayMessageQueue.isEmpty()) {
                 try {
-                    Thread.sleep(Constants.PLATFORM_DISTINGUISH_SEND_INTERVAL);
+                    Thread.sleep(Constants.PLATFORM_DISTINGUISH_EMPTY_QUEUE_SLEEP_TIME);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

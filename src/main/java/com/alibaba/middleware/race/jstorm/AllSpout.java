@@ -40,8 +40,8 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
 	private static Logger LOG = LoggerFactory.getLogger(AllSpout.class);
 	private SpoutOutputCollector _collector;
 
+    public static long DEBUG_spoutStartTime;
     // private static final boolean DEBUG_ENABLE = true;
-    // private static final String DEBUG_FILES_OUTPUT_DIR = "/home/admin/"
     // private String DEBUG_thisSpoutName;
     // private AtomicInteger DEBUG_receivedMsgCount = new AtomicInteger(0);
     // private AtomicInteger DEBUG_amountEqualsZeroPaymentMsgCount = new AtomicInteger(0);
@@ -56,6 +56,7 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
 	
     @Override
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+        DEBUG_spoutStartTime = System.currentTimeMillis();
 //        if (DEBUG_ENABLE) {
 //            DEBUG_thisSpoutName = Thread.currentThread().getName();
 //        }
