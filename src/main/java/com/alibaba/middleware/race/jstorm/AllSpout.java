@@ -41,12 +41,12 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
 	private SpoutOutputCollector _collector;
 
     public static long DEBUG_spoutStartTime;
-    // private static final boolean DEBUG_ENABLE = true;
-    // private String DEBUG_thisSpoutName;
-    // private AtomicInteger DEBUG_receivedMsgCount = new AtomicInteger(0);
-    // private AtomicInteger DEBUG_amountEqualsZeroPaymentMsgCount = new AtomicInteger(0);
-    // private AtomicInteger DEBUG_sendTupleCount = new AtomicInteger(0);
-    // private AtomicInteger DEBUG_resendCount = new AtomicInteger(0);
+//     private static final boolean DEBUG_ENABLE = true;
+//     private String DEBUG_thisSpoutName;
+//     private AtomicInteger DEBUG_receivedMsgCount = new AtomicInteger(0);
+//     private AtomicInteger DEBUG_amountEqualsZeroPaymentMsgCount = new AtomicInteger(0);
+//     private AtomicInteger DEBUG_sendTupleCount = new AtomicInteger(0);
+//     private AtomicInteger DEBUG_resendCount = new AtomicInteger(0);
 
 	
     private AtomicBoolean _paymentMsgEndSignal = new AtomicBoolean(false);
@@ -108,16 +108,21 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
                 if (metaTuple != null) {
                     _collector.emit(new Values(metaTuple.getOrderId(),
                             metaTuple));
-                    // if (DEBUG_ENABLE) {
-                    // int tmpCount = DEBUG_sendTupleCount.addAndGet(1);
-                    // FileUtil.appendLineToFile(DEBUG_FILES_OUTPUT_DIR + "send.txt",
-                    // DEBUG_thisSpoutName + ":DEBUG_sendTupleCount " +
-                    // tmpCount);
-                    // FileUtil.appendLineToFile(DEBUG_FILES_OUTPUT_DIR + "detail_tuples.txt",
-                    // DEBUG_thisSpoutName + " : " + metaTuple.toString());
-                    // FileUtil.appendLineToFile(DEBUG_FILES_OUTPUT_DIR + "tuples.txt",
-                    // metaTuple.toString());
-                    // }
+//                    if (DEBUG_ENABLE) {
+//                        int tmpCount = DEBUG_sendTupleCount.addAndGet(1);
+//                        FileUtil.appendLineToFile(
+//                                Constants.DEBUG_FILES_OUTPUT_DIR + "send.txt",
+//                                DEBUG_thisSpoutName + ":DEBUG_sendTupleCount "
+//                                        + tmpCount);
+//                        FileUtil.appendLineToFile(
+//                                Constants.DEBUG_FILES_OUTPUT_DIR
+//                                        + "detail_tuples.txt",
+//                                DEBUG_thisSpoutName + " : "
+//                                        + metaTuple.toString());
+//                        FileUtil.appendLineToFile(
+//                                Constants.DEBUG_FILES_OUTPUT_DIR + "tuples.txt",
+//                                metaTuple.toString());
+//                    }
                 }
             }
         } else {
@@ -166,7 +171,7 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
                     if (RaceConfig.MqPayTopic.equals(topic)) {
 //                        if (DEBUG_ENABLE) {
 //                          int tmpCount = DEBUG_receivedMsgCount.addAndGet(1);
-//                          FileUtil.appendLineToFile(DEBUG_FILES_OUTPUT_DIR + "receive.txt", DEBUG_thisSpoutName + ":DEBUG_receivedMsgCount " + tmpCount);
+//                          FileUtil.appendLineToFile(Constants.DEBUG_FILES_OUTPUT_DIR + "receive.txt", DEBUG_thisSpoutName + ":DEBUG_receivedMsgCount " + tmpCount);
 //                        }
 
                         PaymentMessage paymentMessage = RaceUtils
@@ -177,14 +182,14 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
                         } else {
 //                            if (DEBUG_ENABLE) {
 //                                int tmpCount2 = DEBUG_amountEqualsZeroPaymentMsgCount.addAndGet(1);
-//                                FileUtil.appendLineToFile(DEBUG_FILES_OUTPUT_DIR + "zero.txt", DEBUG_thisSpoutName + ":DEBUG_amountEqualsZeroPaymentMsgCount " + tmpCount2);
+//                                FileUtil.appendLineToFile(Constants.DEBUG_FILES_OUTPUT_DIR + "zero.txt", DEBUG_thisSpoutName + ":DEBUG_amountEqualsZeroPaymentMsgCount " + tmpCount2);
 //                            }
                         }
                     } else if (RaceConfig.MqTmallTradeTopic.equals(topic)
                             || RaceConfig.MqTaobaoTradeTopic.equals(topic)) {
 //                        if (DEBUG_ENABLE) {
 //                          int tmpCount = DEBUG_receivedMsgCount.addAndGet(1);
-//                          FileUtil.appendLineToFile(DEBUG_FILES_OUTPUT_DIR + "receive.txt", DEBUG_thisSpoutName + ":DEBUG_receivedMsgCount " + tmpCount);
+//                          FileUtil.appendLineToFile(Constants.DEBUG_FILES_OUTPUT_DIR + "receive.txt", DEBUG_thisSpoutName + ":DEBUG_receivedMsgCount " + tmpCount);
 //                        }
                         OrderMessage orderMessage = RaceUtils.readKryoObject(
                                 OrderMessage.class, body);

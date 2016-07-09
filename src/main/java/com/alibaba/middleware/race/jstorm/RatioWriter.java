@@ -105,6 +105,7 @@ public class RatioWriter implements IRichBolt {
         WirelessSumCounter = CounterFactory.createTreeCounter();
         
         receivedKeySet = new ConcurrentSet<Long>();
+        receivedKeySet.clear();
 
         new Thread() {
             @Override

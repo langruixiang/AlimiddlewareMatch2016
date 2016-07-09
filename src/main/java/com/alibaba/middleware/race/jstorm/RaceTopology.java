@@ -30,14 +30,14 @@ public class RaceTopology {
     public static final String ALLSPOUT = "AllSpout";
 
     /** Platform Distinguish **/
-    private static final int PlatformParallelism = 8;
+    private static final int PlatformParallelism = 12;
     public static final String PLATFORMBOLT = "PlatformBolt";
     public static final String TMPAYSTREAM = "TMPayStream";
     public static final String TBPAYSTREAM = "TBPayStream";
     public static final String ALLPAYSTREAM = "AllPayStream";
 
     /** PayMsgPartSum **/
-    private static final int PayMsgPartSumParallelism = 4;
+    private static final int PayMsgPartSumParallelism = 8;
     public static final String PAY_MSG_PART_SUM_BOLT = "PayMsgPartSum";
 
     /** Writer Bolt **/

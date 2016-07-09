@@ -64,34 +64,35 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
     public void execute(Tuple tuple) {
         MetaMessage metaTuple = (MetaMessage) tuple.getValue(1);
         if (RaceConfig.MqPayTopic.equals(metaTuple.getTopic())) {
-            if (receivedPayMsgIdSet.add(metaTuple.getMsgID())) {
-                // emit pc or wireless amout
+            if(receivedPayMsgIdSet.add(metaTuple.getMsgID())) {
+             // emit pc or wireless amout
                 Values values = new Values(
                         metaTuple.getCreateTime() / 60000 * 60,
                         metaTuple.getPayAmount(),
                         metaTuple.getPayPlatform());
                     _collector.emit(RaceTopology.ALLPAYSTREAM, values);
-//                    FileUtil.appendLineToFile("/home/admin/ALLPAYSTREAM.txt", metaTuple.toString());
+//                    String boltName = Thread.currentThread().getName();
+//                    FileUtil.appendLineToFile(Constants.DEBUG_FILES_OUTPUT_DIR + "ALLPAYSTREAM.txt", boltName + "__" + metaTuple.toString());
                 if (solvePaymentMessageAndSend(metaTuple)) {
 
                 } else {
-//                    DEBUG_solveFailedCount.addAndGet(1);
+//                        DEBUG_solveFailedCount.addAndGet(1);
                     _unsolvedPayMessageQueue.offer(metaTuple);
                 }
             } else {
-//                FileUtil.appendLineToFile("/home/admin/alreadyExist.txt", String.valueOf(metaTuple.getUniqueMsgToken()));
+//                FileUtil.appendLineToFile(Constants.DEBUG_FILES_OUTPUT_DIR + "alreadyExist.txt", metaTuple.toString());
             }
         } else if (RaceConfig.MqTaobaoTradeTopic.equals(metaTuple.getTopic())) {
             if (TBTradeMessage.get(metaTuple.getOrderId()) == null) {
                 TBTradeMessage.put(metaTuple.getOrderId(), metaTuple.getPayAmount());
             } else {
-//                FileUtil.appendLineToFile("/home/admin/alreadyExist.txt", "order");
+//                FileUtil.appendLineToFile(Constants.DEBUG_FILES_OUTPUT_DIR + "alreadyExist.txt", "order");
             }
         } else {
             if (TMTradeMessage.get(metaTuple.getOrderId()) == null) {
                 TMTradeMessage.put(metaTuple.getOrderId(), metaTuple.getPayAmount());
             } else {
-//                FileUtil.appendLineToFile("/home/admin/alreadyExist.txt", "order");
+//                FileUtil.appendLineToFile(Constants.DEBUG_FILES_OUTPUT_DIR + "alreadyExist.txt", "order");
             }
         }
         // _collector.ack(tuple);//TODO
@@ -106,7 +107,7 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
                     paymentMessage.getCreateTime() / 60000 * 60,
                     paymentMessage.getPayAmount());
             _collector.emit(RaceTopology.TBPAYSTREAM, values);
-//            FileUtil.appendLineToFile("/home/admin/TBPAYSTREAM.txt", paymentMessage.toString());
+//            FileUtil.appendLineToFile(Constants.DEBUG_FILES_OUTPUT_DIR + "TBPAYSTREAM.txt", paymentMessage.toString());
 //            LOG.info("PlatformDistinguish Emit TBPayment" + ":"
 //                    + paymentMessage.toString());
             // update related order info
@@ -124,7 +125,7 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
                     paymentMessage.getCreateTime() / 60000 * 60,
                     paymentMessage.getPayAmount());
             _collector.emit(RaceTopology.TMPAYSTREAM, values);
-//            FileUtil.appendLineToFile("/home/admin/TMPAYSTREAM.txt", paymentMessage.toString());
+//            FileUtil.appendLineToFile(Constants.DEBUG_FILES_OUTPUT_DIR + "TMPAYSTREAM.txt", paymentMessage.toString());
 //            LOG.info("PlatformDistinguish Emit TMPayment" + ":"
 //                    + paymentMessage.toString());
             // update related order info
@@ -158,6 +159,7 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
 
         receivedPayMsgIdSet = new HashSet<String>(
                 Constants.receivedPayMsgIdSetInitCapacity);
+        receivedPayMsgIdSet.clear();
 
         new Thread(this, "solvePayMessageQueueAndSend").start();
     }

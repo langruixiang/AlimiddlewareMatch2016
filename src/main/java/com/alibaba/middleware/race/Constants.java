@@ -44,8 +44,8 @@ public class Constants {
 
     public static int sumCounterMapInitCapacity = 50000;
     public static int ratioMapInitCapacity = 50000;
-    public static int receivedPayMsgIdSetInitCapacity = 800000;
-    public static int tradeMsgMapInitCapacity = 200000;
+    public static int receivedPayMsgIdSetInitCapacity = 100000;
+    public static int tradeMsgMapInitCapacity = 100000;
     
 
 }

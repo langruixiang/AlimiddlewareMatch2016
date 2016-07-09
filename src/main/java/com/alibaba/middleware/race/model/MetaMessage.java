@@ -109,6 +109,7 @@ public class MetaMessage implements Serializable {
                 ", payPlatform=" + payPlatform +
                 ", createTime=" + createTime +
                 ", topic='" + topic + '\'' +
+                ", msgID='" + msgID + '\'' +
                 '}';
     }
     
