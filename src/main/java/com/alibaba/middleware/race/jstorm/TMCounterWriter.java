@@ -7,6 +7,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.middleware.race.Constants;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.Tair.TairOperatorImpl;
 import com.alibaba.middleware.race.rocketmq.CounterFactory;
@@ -29,9 +30,7 @@ public class TMCounterWriter implements IBasicBolt, Runnable{
 	private transient TairOperatorImpl tairOperator;
 	private DecoratorHashMap sum;
 	private Set<Long> receivedKeySet;
-	
-	private long TMWriterInterval = 10000L;
-	
+
 	private void writeTMCounter(){
 	    synchronized (receivedKeySet) {
 	        for(Long key : receivedKeySet){
@@ -78,7 +77,7 @@ public class TMCounterWriter implements IBasicBolt, Runnable{
 		tairOperator = new TairOperatorImpl(RaceConfig.TairConfigServer, RaceConfig.TairSalveConfigServer,
                 RaceConfig.TairGroup, RaceConfig.TairNamespace);
 		
-		sum = CounterFactory.createHashCounter();
+		sum = CounterFactory.createHashCounter(Constants.sumCounterMapInitCapacity);
 		receivedKeySet = new ConcurrentSet<Long>();
 		
 		new Thread(this, "TMCounterWriter").start();
@@ -89,7 +88,7 @@ public class TMCounterWriter implements IBasicBolt, Runnable{
 		// TODO Auto-generated method stub
 		while(true){
 			try {
-				Thread.sleep(TMWriterInterval);
+				Thread.sleep(Constants.TM_OR_TB_COUNTER_WRITE_TAIR_INTERVAL);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

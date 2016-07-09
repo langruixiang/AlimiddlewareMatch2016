@@ -40,19 +40,18 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
 	private static Logger LOG = LoggerFactory.getLogger(AllSpout.class);
 	private SpoutOutputCollector _collector;
 
-	private int _sendNumPerNexttuple = Constants.DEFAULT_SEND_NUMBER_PER_NEXT_TUPLE;
+    // private static final boolean DEBUG_ENABLE = true;
+    // private static final String DEBUG_FILES_OUTPUT_DIR = "/home/admin/"
+    // private String DEBUG_thisSpoutName;
+    // private AtomicInteger DEBUG_receivedMsgCount = new AtomicInteger(0);
+    // private AtomicInteger DEBUG_amountEqualsZeroPaymentMsgCount = new AtomicInteger(0);
+    // private AtomicInteger DEBUG_sendTupleCount = new AtomicInteger(0);
+    // private AtomicInteger DEBUG_resendCount = new AtomicInteger(0);
 
-//    private static final boolean DEBUG_ENABLE = true;//TODO just for debug
-//    private AtomicInteger DEBUG_receivedMsgCount = new AtomicInteger(0);
-//    private AtomicInteger DEBUG_amountEqualsZeroPaymentMsgCount = new AtomicInteger(0);
-//    private AtomicInteger DEBUG_sendTupleCount = new AtomicInteger(0);
-//    private String DEBUG_thisSpoutName;
-//    private long DEBUG_resendCount = 0;
 	
-    private AtomicBoolean _paymentMsgEndSignal = new AtomicBoolean(false);//TODO
+    private AtomicBoolean _paymentMsgEndSignal = new AtomicBoolean(false);
     private AtomicLong _latestMsgArrivedTime = new AtomicLong(0);
-    private static final long CONSUMER_MAX_WAITING_TIME = 1 * 60 * 1000;//此时间内收不到任何消息，且_paymentMsgEndSignal为true,则认为所有消息接收完成
-    
+
     private transient LinkedBlockingQueue<MetaMessage> sendingQueue;
 	
     @Override
@@ -74,7 +73,7 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
     @Override
     public void fail(Object msgId) {
 //        _collector.emit(new Values(msgId), msgId);//TODO
-//        ++DEBUG_resendCount;
+//        DEBUG_resendCount.addAndGet(1);
     }
 
     private void initConsumer() {
@@ -87,9 +86,9 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
                     RaceConfig.MqTaobaoTradeTopic);
 //            if (DEBUG_ENABLE) {
 //              if(consumer == null){
-//                  FileUtil.appendLineToFile("/home/admin/consumer.txt", DEBUG_thisSpoutName + "Consumer already exist consumer in current worker, don't need to fetch data!");
+//                  FileUtil.appendLineToFile(DEBUG_FILES_OUTPUT_DIR + "consumer.txt", DEBUG_thisSpoutName + "Consumer already exist consumer in current worker, don't need to fetch data!");
 //              } else {
-//                  FileUtil.appendLineToFile("/home/admin/consumer.txt", DEBUG_thisSpoutName + "create consumer successfully!");
+//                  FileUtil.appendLineToFile(DEBUG_FILES_OUTPUT_DIR + "consumer.txt", DEBUG_thisSpoutName + "create consumer successfully!");
 //              }
 //            }
         } catch (MQClientException e) {
@@ -100,30 +99,48 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
     }
 
     @Override
-	public void nextTuple() {
-        for (int i = 0; i < _sendNumPerNexttuple && !sendingQueue.isEmpty(); ++i) {
-            MetaMessage metaTuple = sendingQueue.poll();
-            if (metaTuple != null) {
-//                if (DEBUG_ENABLE) {
-//                  int tmpCount = DEBUG_sendTupleCount.addAndGet(1);
-//                  FileUtil.appendLineToFile("/home/admin/send.txt", DEBUG_thisSpoutName + ":DEBUG_sendTupleCount " + tmpCount);
-//                  FileUtil.appendLineToFile("/home/admin/detail_tuples.txt", DEBUG_thisSpoutName + " : " + metaTuple.toString());
-//                  FileUtil.appendLineToFile("/home/admin/tuples.txt", metaTuple.toString());
-//                }
-
-            _collector.emit(new Values(metaTuple.getOrderId(), metaTuple));
+    public void nextTuple() {
+        if (!sendingQueue.isEmpty()) {
+            for (int i = 0; i < Constants.SPOUT_MAX_SEND_NUMBER_PER_NEXT_TUPLE
+                    && !sendingQueue.isEmpty(); ++i) {
+                MetaMessage metaTuple = sendingQueue.poll();
+                if (metaTuple != null) {
+                    _collector.emit(new Values(metaTuple.getOrderId(),
+                            metaTuple));
+                    // if (DEBUG_ENABLE) {
+                    // int tmpCount = DEBUG_sendTupleCount.addAndGet(1);
+                    // FileUtil.appendLineToFile(DEBUG_FILES_OUTPUT_DIR + "send.txt",
+                    // DEBUG_thisSpoutName + ":DEBUG_sendTupleCount " +
+                    // tmpCount);
+                    // FileUtil.appendLineToFile(DEBUG_FILES_OUTPUT_DIR + "detail_tuples.txt",
+                    // DEBUG_thisSpoutName + " : " + metaTuple.toString());
+                    // FileUtil.appendLineToFile(DEBUG_FILES_OUTPUT_DIR + "tuples.txt",
+                    // metaTuple.toString());
+                    // }
+                }
+            }
+        } else {
+            if (isConsumerTimeOut()) {
+                if (_paymentMsgEndSignal.get()) {
+                    // no more message coming for sure
+                    // sendEndSignals();
+                    // logDebugInfo();
+                    JStormUtils.sleepMs(Constants.NO_MORE_MESSAGE_SLEEP_TIME);
+                } else {
+                    // there maybe more message coming (low probability)
+                    JStormUtils.sleepMs(Constants.CONSUMER_TIMEOUT_SLEEP_TIME);
+                }
+            } else {
+                // there maybe more message coming (high probability)
+                JStormUtils.sleepMs(Constants.EMPTY_SEND_QUEUE_SLEEP_TIME);
             }
         }
-
-	    long current = System.currentTimeMillis();
-        if (_paymentMsgEndSignal.get() && sendingQueue.isEmpty()
-                && current - _latestMsgArrivedTime.get() > CONSUMER_MAX_WAITING_TIME) {
-//            sendEndSignals();
-//            logDebugInfo();
-            JStormUtils.sleepMs(2000);
-        }
-	}
-	
+    }
+    
+    public boolean isConsumerTimeOut() {
+        long current = System.currentTimeMillis();
+        return current - _latestMsgArrivedTime.get() > Constants.SPOUT_CONSUMER_MAX_WAITING_TIME;
+    }
 
     @Override
     public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
@@ -148,7 +165,7 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
                     if (RaceConfig.MqPayTopic.equals(topic)) {
 //                        if (DEBUG_ENABLE) {
 //                          int tmpCount = DEBUG_receivedMsgCount.addAndGet(1);
-//                          FileUtil.appendLineToFile("/home/admin/receive.txt", DEBUG_thisSpoutName + ":DEBUG_receivedMsgCount " + tmpCount);
+//                          FileUtil.appendLineToFile(DEBUG_FILES_OUTPUT_DIR + "receive.txt", DEBUG_thisSpoutName + ":DEBUG_receivedMsgCount " + tmpCount);
 //                        }
 
                         PaymentMessage paymentMessage = RaceUtils
@@ -159,14 +176,14 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
                         } else {
 //                            if (DEBUG_ENABLE) {
 //                                int tmpCount2 = DEBUG_amountEqualsZeroPaymentMsgCount.addAndGet(1);
-//                                FileUtil.appendLineToFile("/home/admin/zero.txt", DEBUG_thisSpoutName + ":DEBUG_amountEqualsZeroPaymentMsgCount " + tmpCount2);
+//                                FileUtil.appendLineToFile(DEBUG_FILES_OUTPUT_DIR + "zero.txt", DEBUG_thisSpoutName + ":DEBUG_amountEqualsZeroPaymentMsgCount " + tmpCount2);
 //                            }
                         }
                     } else if (RaceConfig.MqTmallTradeTopic.equals(topic)
                             || RaceConfig.MqTaobaoTradeTopic.equals(topic)) {
 //                        if (DEBUG_ENABLE) {
 //                          int tmpCount = DEBUG_receivedMsgCount.addAndGet(1);
-//                          FileUtil.appendLineToFile("/home/admin/receive.txt", DEBUG_thisSpoutName + ":DEBUG_receivedMsgCount " + tmpCount);
+//                          FileUtil.appendLineToFile(DEBUG_FILES_OUTPUT_DIR + "receive.txt", DEBUG_thisSpoutName + ":DEBUG_receivedMsgCount " + tmpCount);
 //                        }
                         OrderMessage orderMessage = RaceUtils.readKryoObject(
                                 OrderMessage.class, body);
@@ -186,43 +203,36 @@ public class AllSpout implements IRichSpout, MessageListenerConcurrently {
     
     @Override
     public void ack(Object arg0) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void activate() {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void close() {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void deactivate() {
-        // TODO Auto-generated method stub
 
     }
 
 	@Override
 	public Map<String, Object> getComponentConfiguration() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
     public void logDebugInfo() {
-//        LOG.info("[AllSpout.logDebugInfo] DEBUG_payMessageCount:{}",
-//                DEBUG_receivedPaymentMsgCount);
-//        LOG.info(
-//                "[AllSpout.logDebugInfo] DEBUG_amountEqualsZeroPaymentMsgCount:{}",
-//                DEBUG_amountEqualsZeroPaymentMsgCount);
-//        LOG.info("[AllSpout.logDebugInfo] DEBUG_sendTupleCount:{}",
-//                DEBUG_sendTupleCount);
-//        LOG.info("[AllSpout.logDebugInfo] DEBUG_resendCount:{}",
-//                DEBUG_resendCount);
+/*
+        LOG.info("[{}.logDebugInfo] DEBUG_receivedMsgCount:{}",
+                DEBUG_thisSpoutName, DEBUG_receivedMsgCount);
+        LOG.info("[{}.logDebugInfo] DEBUG_amountEqualsZeroPaymentMsgCount:{}",
+                DEBUG_thisSpoutName, DEBUG_amountEqualsZeroPaymentMsgCount);
+        LOG.info("[{}.logDebugInfo] DEBUG_sendTupleCount:{}",
+                DEBUG_thisSpoutName, DEBUG_sendTupleCount);
+        LOG.info("[{}.logDebugInfo] DEBUG_resendCount:{}",
+                DEBUG_thisSpoutName, DEBUG_resendCount);
+*/
     }
 }

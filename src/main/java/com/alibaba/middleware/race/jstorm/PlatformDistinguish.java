@@ -28,8 +28,8 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
 
     private static final long serialVersionUID = -8918483233950498761L;
     private OutputCollector _collector;
-    private static final long SEND_INTERVAL = 30000L;
-    private static final HashSet<String> receivedPayMsgTokenSet = new HashSet<String>(Constants.MapInitCapacity);
+
+    private static HashSet<String> receivedPayMsgIdSet;
 
 //    private AtomicLong DEBUG_solveFailedCount = new AtomicLong(0);//TODO
 
@@ -64,7 +64,7 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
     public void execute(Tuple tuple) {
         MetaMessage metaTuple = (MetaMessage) tuple.getValue(1);
         if (RaceConfig.MqPayTopic.equals(metaTuple.getTopic())) {
-            if (receivedPayMsgTokenSet.add(metaTuple.getMsgID())) {
+            if (receivedPayMsgIdSet.add(metaTuple.getMsgID())) {
                 // emit pc or wireless amout
                 Values values = new Values(
                         metaTuple.getCreateTime() / 60000 * 60,
@@ -112,7 +112,7 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
             // update related order info
             Double lastAmount = TBTradeMessage.get(orderId);
             Double thisPayAmount = paymentMessage.getPayAmount();
-            if (lastAmount - thisPayAmount < 1e-6) {
+            if (lastAmount - thisPayAmount < Constants.DOUBLE_DIFF_THREHOLD) {
                 TBTradeMessage.remove(orderId);
             } else {
                 TBTradeMessage.put(orderId, lastAmount - thisPayAmount);
@@ -130,7 +130,7 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
             // update related order info
             Double lastAmount = TMTradeMessage.get(orderId);
             Double thisPayAmount = paymentMessage.getPayAmount();
-            if (lastAmount - thisPayAmount < 1e-6) {
+            if (lastAmount - thisPayAmount < Constants.DOUBLE_DIFF_THREHOLD) {
                 TMTradeMessage.remove(orderId);
             } else {
                 TMTradeMessage.put(orderId, lastAmount - thisPayAmount);
@@ -151,10 +151,13 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
         _unsolvedPayMessageQueue = new LinkedBlockingQueue<MetaMessage>();
 
         TMTradeMessage = new ConcurrentHashMap<Long, Double>(
-                Constants.MapInitCapacity);
+                Constants.tradeMsgMapInitCapacity);
 
         TBTradeMessage = new ConcurrentHashMap<Long, Double>(
-                Constants.MapInitCapacity);
+                Constants.tradeMsgMapInitCapacity);
+
+        receivedPayMsgIdSet = new HashSet<String>(
+                Constants.receivedPayMsgIdSetInitCapacity);
 
         new Thread(this, "solvePayMessageQueueAndSend").start();
     }
@@ -164,7 +167,7 @@ public class PlatformDistinguish implements IRichBolt, Runnable {
         while (true) {
             if (_unsolvedPayMessageQueue.isEmpty()) {
                 try {
-                    Thread.sleep(SEND_INTERVAL);
+                    Thread.sleep(Constants.PLATFORM_DISTINGUISH_SEND_INTERVAL);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

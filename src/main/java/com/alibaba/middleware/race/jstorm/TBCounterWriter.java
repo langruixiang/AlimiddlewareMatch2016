@@ -29,7 +29,6 @@ public class TBCounterWriter implements IBasicBolt, Runnable{
 
 	private transient TairOperatorImpl tairOperator;
 	private DecoratorHashMap sum;
-	private long WriterInterval = 10000L;
 	
 	private ConcurrentSet<Long> receivedKeySet;
 	
@@ -77,7 +76,7 @@ public class TBCounterWriter implements IBasicBolt, Runnable{
 		tairOperator = new TairOperatorImpl(RaceConfig.TairConfigServer, RaceConfig.TairSalveConfigServer,
                 RaceConfig.TairGroup, RaceConfig.TairNamespace);
 		
-		sum = CounterFactory.createHashCounter();
+		sum = CounterFactory.createHashCounter(Constants.sumCounterMapInitCapacity);
 		receivedKeySet = new ConcurrentSet<Long>();
 		new Thread(this, "TBCounterWriter").start();
 	}
@@ -87,7 +86,7 @@ public class TBCounterWriter implements IBasicBolt, Runnable{
 		// TODO Auto-generated method stub
 		while(true){
 			try {
-				Thread.sleep(WriterInterval);
+				Thread.sleep(Constants.TM_OR_TB_COUNTER_WRITE_TAIR_INTERVAL);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

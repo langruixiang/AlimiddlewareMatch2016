@@ -26,7 +26,7 @@ public class RatioWriter implements IRichBolt {
     private static final long serialVersionUID = -8998720475277834236L;
 
     OutputCollector collector;
-    private static final long WRITE_TAIR_INTERVAL = 20000L;
+
 
     private static Logger LOG = LoggerFactory.getLogger(RatioWriter.class);
     private transient TairOperatorImpl tairOperator;
@@ -61,7 +61,7 @@ public class RatioWriter implements IRichBolt {
                 pcSum += PCSumCounter.get(key);
                 wirelessSum += WirelessSumCounter.get(key);
                 
-                if(pcSum > 1e-6){
+                if(pcSum > Constants.ZERO_THREHOLD){
                     double ratio = wirelessSum / pcSum;
                     tairOperator.write(RaceConfig.prex_ratio + key, DoubleUtil.roundedTo2Digit(ratio));
 //                  FileUtil.appendLineToFile("/home/admin/result.txt", RaceConfig.prex_ratio + key + " : " + DoubleUtil.roundedTo2Digit(ratio));//TODO remove
@@ -111,7 +111,7 @@ public class RatioWriter implements IRichBolt {
             public void run() {
                 while (true) {
                     try {
-                        Thread.sleep(WRITE_TAIR_INTERVAL);
+                        Thread.sleep(Constants.RATIO_WRITE_TAIR_INTERVAL);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }

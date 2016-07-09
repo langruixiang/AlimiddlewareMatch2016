@@ -1,21 +1,13 @@
 package com.alibaba.middleware.race.jstorm;
 
-import io.netty.util.internal.ConcurrentSet;
-
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.middleware.race.Constants;
-import com.alibaba.middleware.race.RaceConfig;
-import com.alibaba.middleware.race.model.MetaMessage;
 import com.alibaba.middleware.race.rocketmq.CounterFactory;
 import com.alibaba.middleware.race.rocketmq.CounterFactory.DecoratorHashMap;
-import com.alibaba.middleware.race.rocketmq.CounterFactory.DecoratorTreeMap;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -29,8 +21,6 @@ public class PayMsgPartSum implements IRichBolt {
     private static final long serialVersionUID = -3103867690922937400L;
 
     private static Logger LOG = LoggerFactory.getLogger(PayMsgPartSum.class);
-    
-    private static final long SEND_INTERVAL = 20000;
 
     private DecoratorHashMap pcSumCounter;
     private static DecoratorHashMap wirelessSumCounter ;
@@ -61,14 +51,14 @@ public class PayMsgPartSum implements IRichBolt {
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         this._collector = collector;
-        pcSumCounter = CounterFactory.createHashCounter();
-        wirelessSumCounter = CounterFactory.createHashCounter();
+        pcSumCounter = CounterFactory.createHashCounter(Constants.sumCounterMapInitCapacity);
+        wirelessSumCounter = CounterFactory.createHashCounter(Constants.sumCounterMapInitCapacity);
         new Thread() {
             @Override
             public void run() {
                 while (true) {
                     try {
-                        Thread.sleep(SEND_INTERVAL);
+                        Thread.sleep(Constants.PAY_MSG_PART_SUM_SEND_INTERVAL);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -81,7 +71,7 @@ public class PayMsgPartSum implements IRichBolt {
     private void sendSums() {
         synchronized (pcSumCounter) {
             for (Map.Entry<Long, Double> entry : pcSumCounter.entrySet()) {
-                if (entry.getValue() - 0 > 1e-6) {
+                if (entry.getValue() > Constants.ZERO_THREHOLD) {
                     _collector.emit(new Values(entry.getKey(), entry.getValue(), Constants.PC));
                 }
             }
@@ -90,8 +80,8 @@ public class PayMsgPartSum implements IRichBolt {
 
         synchronized (wirelessSumCounter) {
             for (Map.Entry<Long, Double> entry : wirelessSumCounter.entrySet()) {
-                if (entry.getValue() - 0 > 1e-6) {
-                    _collector.emit(new Values(entry.getKey(), entry.getValue(), Constants.Wireless));
+                if (entry.getValue() > Constants.ZERO_THREHOLD) {
+                    _collector.emit(new Values(entry.getKey(), entry.getValue(), Constants.WIRELESS));
                 }
             }
             CounterFactory.cleanCounter(wirelessSumCounter);

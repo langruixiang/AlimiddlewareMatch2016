@@ -15,10 +15,10 @@ public class CounterFactory {
 	public static Long timeStamp = 1L;
 	//Decorate the get operation with init value	
 	public static class DecoratorHashMap{
-		private HashMap<Long, Double> innerMap = new HashMap<Long, Double>();
+		private HashMap<Long, Double> innerMap;
 		
-		public DecoratorHashMap(){
-			
+		public DecoratorHashMap(int initialCapacity){
+		    innerMap = new HashMap<Long, Double>(initialCapacity);
 		}
 		
 		public Double get(Long key){
@@ -50,9 +50,9 @@ public class CounterFactory {
 	}
 	
 	public static class DecoratorTreeMap{
-		private TreeMap<Long, Double> innerMap = new TreeMap<Long, Double>();
+		private TreeMap<Long, Double> innerMap;
 		public DecoratorTreeMap(){
-			
+		    innerMap = new TreeMap<Long, Double>();
 		}
 		
 		public Double get(Long key){
@@ -85,8 +85,8 @@ public class CounterFactory {
 	}
 	
 	
-	public static DecoratorHashMap createHashCounter(){
-		DecoratorHashMap counter = new DecoratorHashMap();		
+	public static DecoratorHashMap createHashCounter(int initialCapacity){
+		DecoratorHashMap counter = new DecoratorHashMap(initialCapacity);
 		return counter;
 	}
 	
